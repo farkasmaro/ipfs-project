@@ -1,11 +1,18 @@
+//Client side application - handling back end & GUI
+
 import React, { Component } from "react";
 import SimpleStorageContract from "./contracts/SimpleStorage.json";
 import getWeb3 from "./getWeb3";
+import ipfs from './ipfs'  //importing node connectino settings from ./ipfs.js
 
 import "./App.css";
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null };
+  state = { ipfsHash: '', storageValue: 0, web3: null, accounts: null, contract: null };
+
+  //specific to react.js
+  captureFile = this.captureFile.bind(this);
+  onSubmit = this.onSubmit.bind(this);
 
   componentDidMount = async () => {
     try {
@@ -48,23 +55,62 @@ class App extends Component {
     this.setState({ storageValue: response });
   };
 
+  //Handlers for file capture and submit
+
+  captureFile(event) {
+    //Need to convert the file capture to 'buffer' format for ipfs to understand
+    //console.log('capture file...')
+    event.preventDefault()
+    const file = event.target.files[0]
+    const reader = new window.FileReader()
+    reader.readAsArrayBuffer(file) //this is the conversion to buffer
+    //take result array and we want to set this to compnent state
+    reader.onloadend = () => {
+      this.setState({buffer: Buffer.from(reader.result)})
+      //log
+      console.log('buffer', this.state.buffer)
+    }
+  }
+
+  onSubmit(event) {
+    event.preventDefault()  //Prevent refreshing of page
+    //console.log('on submit...')
+    //read files add add the buffer value to 'add
+    ipfs.files.add(this.state.buffer, (error, result) => {
+      if (error) {
+        console.error(error)  //error handling
+        return
+      }
+      this.setState({ipfsHash: result[0].hash})
+      console.log('ipfsHash', this.state.ipfsHash)
+    })
+  }
+
+//This is my react render that couples components with markup
+//Edit the GUI below (currently just a template):
   render() {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
     return (
       <div className="App">
-        <h1>Good to Go!</h1>
-        <p>Your Truffle Box is installed and ready.</p>
-        <h2>Smart Contract Example</h2>
-        <p>
-          If your contracts compiled and migrated successfully, below will show
-          a stored value of 5 (by default).
-        </p>
-        <p>
-          Try changing the value stored on <strong>line 42</strong> of App.js.
-        </p>
-        <div>The stored value is: {this.state.storageValue}</div>
+        <nav className= "navbar pure-menu pure-menu horizontal">
+          <a href="#" className= "pure-menu-heading pure-menu-link">IPFS File Upload Application</a>
+        </nav>
+        <main className="container">
+          <div className="pure-g">
+            <div className="pure-u-1-1">
+              <h1>Your Image</h1>
+              <p>This image is stored on IPFS & The Ethereum Blockchain!</p>
+              <img src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`} alt=" :( ~ Hash not found"/>
+              <h2>Upload Image</h2>
+              <form onSubmit={this.onSubmit} > 
+                <input type='file' onChange={this.captureFile} />
+                <input type='submit' />
+              </form>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
