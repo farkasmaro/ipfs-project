@@ -7,18 +7,24 @@ import getWeb3 from "./getWeb3";
 //Can fetch read/write data from smart contracts. 
 import ipfs from './ipfs'  //importing node connectino settings from ./ipfs.js
 
-import "./App.css";
+
+//import "./css/oswald.css"
+//import "./css/open-sans.css"
+//import './css/pure-min.css'
+import "./App.css"
+import Web3 from "web3";
 
 class App extends Component {
-  state = { ipfsHash: '', storageValue: 0, web3: null, accounts: null, contract: null };
+
+  state = { ipfsHash: 'empty', storageValue: 0, web3: null, accounts: null, contract: null };
 
   //specific to react.js - need to bind variables to 'this' instance
   captureFile = this.captureFile.bind(this);
   onSubmit = this.onSubmit.bind(this);
 
-
   componentDidMount = async () => {
     try {
+
       // Get network provider and web3 instance.
       const web3 = await getWeb3();
 
@@ -33,12 +39,22 @@ class App extends Component {
         deployedNetwork && deployedNetwork.address,
       );
 
+      //Get IPFShash? - if updated before refresh
+      
+
 
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance});  //, this.runExample
+      this.setState({web3, accounts, contract: instance});  //, this.runExample
       //Need to set ipfsHash here rather than running example.
-      //this.setState({ipfsHash: ipfsHash}); 
+      const ipfsHash = this.state.contract.methods.get;
+      this.setState({ipfsHash: ipfsHash});
+
+      console.log('ipfsHash2', this.state.ipfsHash)
+      console.log('web3: ', this.state.web3)
+      console.log('accounts: ', this.state.accounts)
+      console.log('contract', this.state.contract)
+
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -52,7 +68,7 @@ class App extends Component {
     //I haven't yet changed this function, but it's running 'Example'.
     //This just sets the origin state to 'ipfsHash'
     const { accounts, contract, ipfsHash } = this.state;
-
+    console.log('runExample being called...');
     // Stores a given value, 5 by default.
     //await contract.methods.set(5).send({ from: accounts[0] });   ??
 
@@ -91,10 +107,11 @@ class App extends Component {
         return
       }
       //Update blockchain
+      //Setting the ipfshash 'state' isn't working?
       this.state.contract.methods.set(result[0].hash).send({
         from: this.state.accounts[0] }).then((r) =>{ //???
+          console.log('ipfsHash', result[0].hash)
         return this.setState({ipfsHash: result[0].hash})
-        console.log('ipfsHash', this.state.ipfsHash)
       })
       //this.setState({ipfsHash: result[0].hash})
       //console.log('ipfsHash', this.state.ipfsHash)

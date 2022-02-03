@@ -958,12 +958,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0xA1414162A3e48B002De9EB9C0967938AfCE3133b",
-      "transactionHash": "0xfccfa65a92ce6aea7ff30a612165ca4e63649efc49a0b87020e6d844b83d01ce"
+      "address": "0x6Ea08BE0B5407e887D9A800e52d2fA4E22Ef278C",
+      "transactionHash": "0xff26722f5a4b6e2202d1979aa804c607064a40b73d5805f2861f69dd92c330c3"
     }
   },
   "schemaVersion": "3.4.3",
-  "updatedAt": "2022-01-18T16:49:34.014Z",
+  "updatedAt": "2022-02-03T12:42:18.768Z",
   "networkType": "ethereum",
   "devdoc": {
     "methods": {}
