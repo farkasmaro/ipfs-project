@@ -14,9 +14,27 @@ import ipfs from './ipfs'  //importing node connectino settings from ./ipfs.js
 import "./App.css"
 import Web3 from "web3";
 
+//--some encryption functions--
+var crypto = require('crypto'),
+    algorithm = 'aes-256-ctr',
+    password = '123456789AJBCOAhsb';
+    
+function encrypt(buffer){
+  var cipher = crypto.createCipher(algorithm,password)
+  var crypted = Buffer.concat([cipher.update(buffer),cipher.final()]);
+  return crypted;
+}
+ 
+function decrypt(buffer){
+  var decipher = crypto.createDecipher(algorithm,password)
+  var dec = Buffer.concat([decipher.update(buffer) , decipher.final()]);
+  return dec;
+}
+//---
+
 class App extends Component {
 
-  state = { ipfsHash: 'empty', storageValue: 0, web3: null, accounts: null, contract: null };
+  state = {ipfsHash: "empty", storageValue: 0, web3: null, accounts: null, contract: null };
 
   //specific to react.js - need to bind variables to 'this' instance
   captureFile = this.captureFile.bind(this);
@@ -41,19 +59,21 @@ class App extends Component {
 
       //Get IPFShash? - if updated before refresh
       
-
-
+      //this.runExample();
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
       this.setState({web3, accounts, contract: instance});  //, this.runExample
       //Need to set ipfsHash here rather than running example.
-      const ipfsHash = this.state.contract.methods.get;
-      this.setState({ipfsHash: ipfsHash});
 
-      console.log('ipfsHash2', this.state.ipfsHash)
+      //not getting hte right value, I want to set the ipfsHash vakue, and then retreive. 
+      //const ipfsHash = this.state.contract.get;
+      //------
+      this.setState({ipfsHash: this.state.ipfsHash});
+
+      console.log('ipfsHash2: ', this.state.ipfsHash)
       console.log('web3: ', this.state.web3)
       console.log('accounts: ', this.state.accounts)
-      console.log('contract', this.state.contract)
+      console.log('contract: ', this.state.contract)
 
     } catch (error) {
       // Catch any errors for any of the above operations.
@@ -64,6 +84,7 @@ class App extends Component {
     }
   };
 
+ 
   runExample = async () => {
     //I haven't yet changed this function, but it's running 'Example'.
     //This just sets the origin state to 'ipfsHash'
@@ -93,9 +114,12 @@ class App extends Component {
       this.setState({buffer: Buffer.from(reader.result)})
       //log
       console.log('buffer', this.state.buffer)
+      alert(
+        'Uploaded file converted to array buffer.',
+      );
     }
   }
-
+  
   onSubmit(event) {
     event.preventDefault()  //Prevent refreshing of page
     //console.log('on submit...')
@@ -108,15 +132,27 @@ class App extends Component {
       }
       //Update blockchain
       //Setting the ipfshash 'state' isn't working?
-      this.state.contract.methods.set(result[0].hash).send({
-        from: this.state.accounts[0] }).then((r) =>{ //???
-          console.log('ipfsHash', result[0].hash)
-        return this.setState({ipfsHash: result[0].hash})
-      })
+
+      this.state.contract.methods.set(result[0].hash).send({from : this.state.accounts[0]})
+      console.log('result hash: ', result[0].hash)
+      this.state.ipfsHash = result[0].hash.toString()   //At this point the state value for ipfshash is't being updated
+      console.log('new state ipfsHash: ', this.state.ipfsHash)
+      //now returning the right value?
+      return
       //this.setState({ipfsHash: result[0].hash})
-      //console.log('ipfsHash', this.state.ipfsHash)
+      
     })
+
+    //Test symmetric encrypt
+    var hw = encrypt(new Buffer("Farkas Maro encrypt me", "utf8"))
+// outputs hello world
+    console.log(hw);
+    console.log(decrypt(hw).toString('utf8'));
+
+    console.log('ipfsHash2: ', this.state.ipfsHash)
   }
+
+//Render functions
 
 //This is my react render that couples components with markup
 //Edit the GUI below (currently just a template):
@@ -132,10 +168,10 @@ class App extends Component {
         <main className="container">
           <div className="pure-g">
             <div className="pure-u-1-1">
-              <h1>My Image</h1>
-              <p>This image is stored on IPFS & The Ethereum Blockchain!</p>
-              <img src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`} alt=  " :( ~ Hash not found"/>
-              <h2>Upload Image</h2>
+              <h1>IPFS and Blockchain File Storage</h1>
+              <p>This file is stored on IPFS & The Ethereum Blockchain!</p>
+              <img src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
+              <h2>Upload File</h2>
               <form onSubmit={this.onSubmit} > 
                 <input type='file' onChange={this.captureFile} />
                 <input type='submit' />
