@@ -1,18 +1,13 @@
 //Client side application - handling back end & GUI
-
 import React, { Component } from "react";
 import SimpleStorageContract from "./contracts/SimpleStorage.json";
 import getWeb3 from "./getWeb3";  
+import web3 from "web3";
 //Included with truffle box - enables the client side app to talk to ethereum chain
 //Can fetch read/write data from smart contracts. 
 import ipfs from './ipfs'  //importing node connectino settings from ./ipfs.js
 
-
-//import "./css/oswald.css"
-//import "./css/open-sans.css"
-//import './css/pure-min.css'
 import "./App.css"
-//import Web3 from "web3";
 
 //--some encryption functions--
 var crypto = require('crypto'),
@@ -39,9 +34,9 @@ class App extends Component {
   //specific to react.js - need to bind variables to 'this' instance
   captureFile = this.captureFile.bind(this);
   onSubmit = this.onSubmit.bind(this);
-  //ipfsHash = this.ipfsHash.bind(this);
 
   componentDidMount = async () => {
+    //This fucntion handles the asynchronous update of the web page.
     try {
 
       // Get network provider and web3 instance.
@@ -62,16 +57,26 @@ class App extends Component {
       // Set web3, accounts, and contract to the state, and then proceed with an
       this.setState({web3, accounts, contract: instance});  //, this.runExample
       
-      console.log('web3: ', this.state.web3)
-      console.log('accounts: ', this.state.accounts)
-      console.log('contract: ', this.state.contract)
+      //console.log('web3: ', this.state.web3)
+      console.log('Connected Account: ', this.state.accounts)
+      console.log('Contract instance: ', this.state.contract)
 
       const readipfsHash = await this.state.contract.methods.get().call();
         //readIPFSHash is the promise not the value.
         //the 'await' returns the value inside the promise if value, and set the state. 
 
       this.setState({ipfsHash: readipfsHash});
-      console.log('ipfsHash2: ', readipfsHash)      
+      console.log('Latest hash: ', readipfsHash)  
+
+      //-- try retrieve transaction information -- 
+      const contractAddress = await this.state.contract._address;
+      console.log('Contract Address: ', contractAddress)
+      const transactionDetails = await web3.eth.getTransaction(accounts);
+      console.log('Transaction Details: ', transactionDetails)
+
+      // Display currrent block 
+      //await this.checkCurrentBlock();
+      //----------------------------
 
     } catch (error) {
       // Catch any errors for any of the above operations.
@@ -114,48 +119,59 @@ class App extends Component {
       this.setState({buffer: Buffer.from(reader.result)})
       //log
       console.log('buffer', this.state.buffer)
-      alert(
-        'Uploaded file converted to array buffer.',
-      );
+      alert('Uploaded file converted to array buffer.');
     }
   }
   
   onSubmit(event) {
-    const { accounts, contract, ipfsHash, buffer } = this.state;
+    const { accounts, contract, buffer } = this.state;
 
     event.preventDefault()  //Prevent refreshing of page
     console.log('On submit...')
-    //read files add add the buffer value to 'add
-    //update ipfs
+    console.log('previous upload ipfsHash: ', this.state.ipfsHash)
+    //-- Update ipfs with the contents of 'buffer' from capture button.
     ipfs.files.add(buffer, (error, result) => {
       if (error) {
+        alert('Error: No file selected.');
         console.error(error)  //error handling
         return
       }
     
-      //Update blockchain
+      //--   Update blockchain   --
       //Setting the ipfshash 'state' isn't working?
       contract.methods.set(result[0].hash).send({from : accounts[0]}).then((r) => {
-        console.log('result hash: ', result[0].hash)
+        console.log('new ipfsHash: ', result[0].hash)
         //this.state.ipfsHash = result[0].hash;   //At this point the state value for ipfshash is't being updated
         //console.log('new state ipfsHash: ', this.state.ipfsHash)
         //now returning the right value?
         this.setState({ipfsHash: result[0].hash})
+        
         return
       })   
     })
-
-    //Test symmetric encrypt
-
-   // var hw = encrypt(new Buffer("Farkas Maro encrypt me", "utf8"))
-// outputs hello world
+    // --- Test symmetric encrypt ---
+    // var hw = encrypt(new Buffer("Farkas Maro encrypt me", "utf8"))
+    
     //console.log(hw);
-    //console.log(decrypt(hw).toString('utf8'));
-
-    console.log('ipfsHash2: ', this.state.ipfsHash)
+    //console.log(decrypt(hw).toString('utf8'))
   }
 
-//Render functions
+checkCurrentBlock = async () => {
+  const block = await this.state.web3.eth.getBlock("latest")
+  console.log('Latest Block', block)
+  return 
+}
+
+button_latest_block = async (event) => {
+  //needs to be asynchronous to read the latest transaction from block. 
+  console.log('Block button pressed..')
+  await this.checkCurrentBlock();
+  // Sort how to display in html
+  //document.write(blockContents)
+  return
+}
+
+//-- Render functions --
 
 //This is my react render that couples components with markup
 //Edit the GUI below (currently just a template):
@@ -165,12 +181,10 @@ class App extends Component {
     }
     return (
       <div className="App">
-        <nav className= "navbar pure-menu pure-menu horizontal">
-          <a href="#" className= "pure-menu-heading pure-menu-link">IPFS File Upload</a>
+        <nav className= "navbar">
+          <a href="#" className= "heading">IPFS File Upload</a>
         </nav>
         <main className="container">
-          <div className="pure-g">
-            <div className="pure-u-1-1">
               <h1>IPFS and Blockchain File Storage</h1>
               <p>This file is stored on IPFS & The Ethereum Blockchain!</p>
               <img src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
@@ -179,8 +193,9 @@ class App extends Component {
                 <input type='file' onChange={this.captureFile} />
                 <input type='submit' />
               </form>
-            </div>
-          </div>
+              <button className="blockbutton" type="button" onClick={this.button_latest_block}> 
+                Show Latest Block
+              </button>
         </main>
       </div>
     );
