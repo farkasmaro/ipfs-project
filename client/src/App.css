@@ -11,11 +11,15 @@ body{
 }
 
 h1{
-  padding-top: 20px;
+  padding-top: 10px;
 }
 
-h2, h3 {
-  font-family: 'Montserrat', sans-serif;
+h2{
+  font-size: 30px;
+}
+
+h3{
+  font-size: 25px;
 }
 
 code {
@@ -50,7 +54,37 @@ code {
   text-decoration: none;
 }
 
-.blockbutton {
-  margin-top: 20px;
-  padding: 2px;
+/* Capture File Button*/ 
+.captureFile {
+  font-family: 'Montserrat', sans-serif;
+  color: black;
+  font-size: 15px;
 }
+
+/* Submit File Button*/ 
+.submit {
+  font-family: 'Montserrat', sans-serif;
+  color: black;
+  font-size: 15px;
+}
+
+/* Show Latest Block Button */
+.blockbutton {
+  margin: 20px;
+  padding: 5px;
+  background-color: #ff5252;
+  font-family: 'Montserrat', sans-serif;
+  color: white;
+  font-size: 20px;
+}
+.blockbutton:hover {
+  background-color: #eee;
+  color: black;
+}
+
+.show_block {
+  white-space: pre-line;
+  font-size: 15px;
+  
+}
+

@@ -38,7 +38,7 @@ class App extends Component {
   componentDidMount = async () => {
     //This fucntion handles the asynchronous update of the web page.
     try {
-
+      document.title = "EthIPFS - IPFS File Share";
       // Get network provider and web3 instance.
       const web3 = await getWeb3();
 
@@ -156,48 +156,93 @@ class App extends Component {
     //console.log(decrypt(hw).toString('utf8'))
   }
 
+/*
+no longer required
 checkCurrentBlock = async () => {
-  const block = await this.state.web3.eth.getBlock("latest")
+  let block = await this.state.web3.eth.getBlock("latest")
   console.log('Latest Block', block)
   return 
 }
+*/
+
 
 button_latest_block = async (event) => {
   //needs to be asynchronous to read the latest transaction from block. 
-  console.log('Block button pressed..')
-  await this.checkCurrentBlock();
-  // Sort how to display in html
-  //document.write(blockContents)
+  console.log('Latest block button pressed..')
+
+  let block = await this.state.web3.eth.getBlock("latest")
+
+  console.log('Latest Block', block)
+  let block_txt = "";
+  for (const [key, value] of Object.entries(block)) {
+    block_txt += (key + ": " + value + " \n");
+  };
+  document.getElementById("show_block").innerHTML = block_txt;
   return
+}
+
+// When block number is specified, show block details.
+button_blockSelect = async (event) =>
+{
+  try
+  {
+    event.preventDefault()
+    console.log('Selected block button pressed..')
+    let blocknumber = document.getElementById("blockNum").value
+    let block = await this.state.web3.eth.getBlock(blocknumber)
+    //console.log("Block " + blocknumber + ": " + block)
+    let block_txt = "";
+    for (const [key, value] of Object.entries(block)) {
+      block_txt += (key + ": " + value + " \n");
+    };  
+    document.getElementById("show_block").innerHTML = block_txt;
+    return
+  }
+  catch (error) {
+    // Catch any errors for any of the above operations.
+    alert('Error: Invalid block number.');
+    console.error(error);
+  }
 }
 
 //-- Render functions --
 
 //This is my react render that couples components with markup
 //Edit the GUI below (currently just a template):
+// - Favicon not working yet
   render() {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
     return (
-      <div className="App">
-        <nav className= "navbar">
-          <a href="#" className= "heading">IPFS File Upload</a>
-        </nav>
-        <main className="container">
+        <div className="App">
+          <nav className= "navbar">
+            <a href="#" className= "heading">IPFS File Upload</a>
+            <link rel="icon" type="image/x-icon" href="/favicon_io/favicon.ico"></link>
+          </nav>
+          <main className="container">
               <h1>IPFS and Blockchain File Storage</h1>
-              <p>This file is stored on IPFS & The Ethereum Blockchain!</p>
-              <img src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
+                <p>This file is stored on IPFS & The Ethereum Blockchain!</p>
+                <img src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
               <h2>Upload File</h2>
-              <form onSubmit={this.onSubmit} > 
-                <input type='file' onChange={this.captureFile} />
-                <input type='submit' />
-              </form>
-              <button className="blockbutton" type="button" onClick={this.button_latest_block}> 
-                Show Latest Block
-              </button>
-        </main>
-      </div>
+                <form onSubmit={this.onSubmit} > 
+                  <input className="captureFile" type='file' onChange={this.captureFile}/>
+                  <input className="submit" type='submit' />
+                </form>
+                <h3>Select Block</h3>
+                  <p>Select a block or transaction number to view block details.</p>
+                    <form onSubmit={this.button_blockSelect} >
+                      <input id="blockNum" type='number'/>
+                      <input className="submit" type='submit' />
+                    </form>
+                    <button className="blockbutton" type="button" onClick={this.button_latest_block}> 
+                      Show Latest Block
+                    </button>
+                    <br></br>
+                      <output className="show_block" id="show_block"></output>
+                    <br></br>
+          </main>
+        </div>
     );
   }
 }
