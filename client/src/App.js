@@ -69,10 +69,10 @@ class App extends Component {
       console.log('Latest hash: ', readipfsHash)  
 
       //-- try retrieve transaction information -- 
-      const contractAddress = await this.state.contract._address;
-      console.log('Contract Address: ', contractAddress)
-      const transactionDetails = await web3.eth.getTransaction(accounts);
-      console.log('Transaction Details: ', transactionDetails)
+      const eth_address = await this.state.contract._address;
+      console.log('Contract Address: ', eth_address)
+      //const transactionDetails = await web3.eth.getTransaction(accounts);
+      //console.log('Transaction Details: ', transactionDetails)
 
       // Display currrent block 
       //await this.checkCurrentBlock();
@@ -87,23 +87,6 @@ class App extends Component {
     }
   };
 
- 
-  runExample = async () => {
-    //I haven't yet changed this function, but it's running 'Example'.
-    //This just sets the origin state to 'ipfsHash'
-  
-    //--test
-    const { accounts, contract, ipfsHash } = this.state;
-    // Stores a given value, 5 by default.
-    contract.methods.set(ipfsHash).send({ from: accounts[0] });   //??
-
-    // Get the value from the contract to prove it worked.
-    const response = contract.methods.get().call();
-    // Update state with the result.
-    this.setState({ipfsHash: response});  // storageValue: response ?
-    //---
-  
-  };
 
   //Handlers for file capture and submit
 
@@ -138,14 +121,13 @@ class App extends Component {
       }
     
       //--   Update blockchain   --
-      //Setting the ipfshash 'state' isn't working?
+      // test sending more details to contract:
+      //- function upload(string memory _ipfsHash, string memory _author, uint _timestamp) public {
       contract.methods.set(result[0].hash).send({from : accounts[0]}).then((r) => {
         console.log('new ipfsHash: ', result[0].hash)
-        //this.state.ipfsHash = result[0].hash;   //At this point the state value for ipfshash is't being updated
-        //console.log('new state ipfsHash: ', this.state.ipfsHash)
-        //now returning the right value?
         this.setState({ipfsHash: result[0].hash})
-        
+        let url = "url: www.ipfs.io/ipfs/" + this.state.ipfsHash;
+        document.getElementById("ipfsURL").innerHTML = url;
         return
       })   
     })
@@ -182,6 +164,7 @@ button_latest_block = async (event) => {
 }
 
 // When block number is specified, show block details.
+// - To edit so only the key details are displayed (e.g., transaction hash, parent hash, timestamp, gas fees etc.,)
 button_blockSelect = async (event) =>
 {
   try
@@ -228,11 +211,14 @@ button_blockSelect = async (event) =>
                 <form onSubmit={this.onSubmit} > 
                   <input className="captureFile" type='file' onChange={this.captureFile}/>
                   <input className="submit" type='submit' />
+                  <br></br>
+                    <output id="ipfsURL"></output>
+                  <br></br>
                 </form>
                 <h3>Select Block</h3>
-                  <p>Select a block or transaction number to view block details.</p>
+                  <p>Search blockchain using block number or transaction hash. (e.g., '1','2','0x46e5...')</p>
                     <form onSubmit={this.button_blockSelect} >
-                      <input id="blockNum" type='number'/>
+                      <input id="blockNum" type='text'/>
                       <input className="submit" type='submit' />
                     </form>
                     <button className="blockbutton" type="button" onClick={this.button_latest_block}> 

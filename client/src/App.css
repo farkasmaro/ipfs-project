@@ -59,6 +59,7 @@ code {
   font-family: 'Montserrat', sans-serif;
   color: black;
   font-size: 15px;
+  margin-bottom: 10px;
 }
 
 /* Submit File Button*/ 
@@ -85,6 +86,5 @@ code {
 .show_block {
   white-space: pre-line;
   font-size: 15px;
-  
 }
 
