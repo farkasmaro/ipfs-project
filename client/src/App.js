@@ -1,8 +1,8 @@
 //Client side application - handling back end & GUI
 import React, { Component } from "react";
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
+import ProvStorageContract from "./contracts/ProvStorage.json";
 import getWeb3 from "./getWeb3";  
-import web3 from "web3";
+//import web3 from "web3";
 //Included with truffle box - enables the client side app to talk to ethereum chain
 //Can fetch read/write data from smart contracts. 
 import ipfs from './ipfs'  //importing node connectino settings from ./ipfs.js
@@ -47,9 +47,9 @@ class App extends Component {
 
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = SimpleStorageContract.networks[networkId];
+      const deployedNetwork = ProvStorageContract.networks[networkId];
       const instance = new web3.eth.Contract(
-        SimpleStorageContract.abi,
+        ProvStorageContract.abi,
         deployedNetwork && deployedNetwork.address,
       );
     
@@ -61,7 +61,7 @@ class App extends Component {
       console.log('Connected Account: ', this.state.accounts)
       console.log('Contract instance: ', this.state.contract)
 
-      const readipfsHash = await this.state.contract.methods.get().call();
+      const readipfsHash = await this.state.contract.methods.getIPFS().call();
         //readIPFSHash is the promise not the value.
         //the 'await' returns the value inside the promise if value, and set the state. 
 
@@ -91,20 +91,30 @@ class App extends Component {
   //Handlers for file capture and submit
 
   captureFile(event){
-    //Need to convert the file capture to 'buffer' format for ipfs to understand
-    //console.log('capture file...')
-    event.preventDefault()
-    const file = event.target.files[0]
-    const reader = new window.FileReader()
-    reader.readAsArrayBuffer(file) //this is the conversion to buffer
-    //take result array and we want to set this to compnent state
-    reader.onloadend = () => {
-      this.setState({buffer: Buffer.from(reader.result)})
-      //log
-      console.log('buffer', this.state.buffer)
-      alert('Uploaded file converted to array buffer.');
+    try
+    {
+      //Need to convert the file capture to 'buffer' format for ipfs to understand
+      //console.log('capture file...')
+      event.preventDefault()
+      const file = event.target.files[0]
+      const reader = new window.FileReader()
+      reader.readAsArrayBuffer(file) //this is the conversion to buffer
+      //take result array and we want to set this to compnent state
+      reader.onloadend = () => {
+        this.setState({buffer: Buffer.from(reader.result)})
+        //log
+        console.log('buffer', this.state.buffer)
+        alert('Uploaded file converted to array buffer.');
+      }
+
+    }
+    catch (error)
+    {
+      alert('Error: Unsupported File');
+      console.error(error);
     }
   }
+
   
   onSubmit(event) {
     const { accounts, contract, buffer } = this.state;
@@ -123,7 +133,18 @@ class App extends Component {
       //--   Update blockchain   --
       // test sending more details to contract:
       //- function upload(string memory _ipfsHash, string memory _author, uint _timestamp) public {
-      contract.methods.set(result[0].hash).send({from : accounts[0]}).then((r) => {
+      
+      let author = document.getElementById("author").value; //get author from text box
+      let time = new Date();
+      time = time.getTime();  //unix timestamp
+      let filename = document.getElementById("captureFile").value;
+      filename = filename.split("\\").pop();
+      console.log('Author: ', author);
+      console.log('Time: ', time);
+      console.log('Filename: ', filename);
+
+      //contract.methods.set(result[0].hash).send({from : accounts[0]}).then((r) => {
+      contract.methods.upload(result[0].hash, author, filename, time).send({from : accounts[0]}).then((r) => {
         console.log('new ipfsHash: ', result[0].hash)
         this.setState({ipfsHash: result[0].hash})
         let url = "url: www.ipfs.io/ipfs/" + this.state.ipfsHash;
@@ -138,23 +159,38 @@ class App extends Component {
     //console.log(decrypt(hw).toString('utf8'))
   }
 
-/*
-no longer required
-checkCurrentBlock = async () => {
-  let block = await this.state.web3.eth.getBlock("latest")
-  console.log('Latest Block', block)
-  return 
-}
-*/
+button_latest_upload = async (event) => {
+// CURRENTLY RETURNING OBJECT NOT ACTUAL VALUE OF VARIABLE.
+  console.log('Latest upload button pressed...')
+  const{ contract, address } = this.state;
+  try{
 
+    const txNumber = await this.state.contract.methods.getTxNumber().call();
+    let ipfsHash = contract.methods.getIPFS();
+    //let txHash = await contract.methods.getTxHash().call();
+    let author = contract.methods.getAuthor();
+    const filename = await this.state.contract.methods.getFileName().call();
+    let timestamp = contract.methods.getTimestamp();
+  
+    console.log('filename: ', await this.state.contract.methods.getFileName().call())
+    console.log('txNumber: ', txNumber)
+    document.getElementById("show_upload").innerHTML = filename;
+  }
+  catch (error){
+    alert('Error: Unable to show latest upload.')
+    console.error(error)
+  }
+
+
+}
 
 button_latest_block = async (event) => {
   //needs to be asynchronous to read the latest transaction from block. 
-  console.log('Latest block button pressed..')
+  console.log('Latest block button pressed..');
 
-  let block = await this.state.web3.eth.getBlock("latest")
+  let block = await this.state.web3.eth.getBlock("latest");
 
-  console.log('Latest Block', block)
+  console.log('Latest Block', block);
   let block_txt = "";
   for (const [key, value] of Object.entries(block)) {
     block_txt += (key + ": " + value + " \n");
@@ -198,37 +234,49 @@ button_blockSelect = async (event) =>
       return <div>Loading Web3, accounts, and contract...</div>;
     }
     return (
-        <div className="App">
-          <nav className= "navbar">
-            <a href="#" className= "heading">IPFS File Upload</a>
-            <link rel="icon" type="image/x-icon" href="/favicon_io/favicon.ico"></link>
-          </nav>
-          <main className="container">
-              <h1>IPFS and Blockchain File Storage</h1>
-                <p>This file is stored on IPFS & The Ethereum Blockchain!</p>
-                <img src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
-              <h2>Upload File</h2>
-                <form onSubmit={this.onSubmit} > 
-                  <input className="captureFile" type='file' onChange={this.captureFile}/>
-                  <input className="submit" type='submit' />
-                  <br></br>
-                    <output id="ipfsURL"></output>
-                  <br></br>
-                </form>
-                <h3>Select Block</h3>
-                  <p>Search blockchain using block number or transaction hash. (e.g., '1','2','0x46e5...')</p>
-                    <form onSubmit={this.button_blockSelect} >
-                      <input id="blockNum" type='text'/>
-                      <input className="submit" type='submit' />
-                    </form>
-                    <button className="blockbutton" type="button" onClick={this.button_latest_block}> 
-                      Show Latest Block
-                    </button>
-                    <br></br>
-                      <output className="show_block" id="show_block"></output>
-                    <br></br>
-          </main>
-        </div>
+      <div className="App">
+      <nav className= "navbar">
+         <a href="#" className= "heading">IPFS File Upload</a>
+         <link rel="icon" type="image/x-icon" href="/favicon_io/favicon.ico">
+         </link>
+      </nav>
+      <main className="container">
+         <h1>IPFS and Blockchain File Storage</h1>
+         <p>This file is stored on IPFS & The Ethereum Blockchain!</p>
+         <img src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
+         <h2>Upload File</h2>
+         <form onSubmit={this.onSubmit} > 
+            <label for="author"> Insert Name:  </label>
+            <input className="author" id="author" type='text'/>
+            <br></br>
+            <input className="captureFile" id="captureFile" type='file' onChange={this.captureFile}/>
+            <input className="submit" type='submit' />
+            <br></br>
+            <output id="ipfsURL"></output>
+            <br></br>
+         </form>
+         <h3>View Uploads</h3>
+         <p>Search elements on smart contract. </p>
+         <button className="view_upload_button" type="button" onClick={this.button_latest_upload}> 
+         Show Latest Upload
+         </button>
+         <br></br>
+         <output className="show_upload" id="show_upload"></output>
+         <br></br>
+         <h4>View Blockchain</h4>
+         <p>Search blockchain using block number or transaction hash. (e.g., '1','2','0x46e5...')</p>
+         <form onSubmit={this.button_blockSelect} >
+            <input id="blockNum" type='text'/>
+            <input className="submit" type='submit' />
+         </form>
+         <button className="blockbutton" type="button" onClick={this.button_latest_block}> 
+         Show Latest Block
+         </button>
+         <br></br>
+         <output className="show_block" id="show_block"></output>
+         <br></br>
+      </main>
+   </div>
     );
   }
 }
