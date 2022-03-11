@@ -40,6 +40,7 @@ contract ProvStorage {
     //problem is the transaction ID doesn't generate until after this function?
     txNumber = txNumber +1;
     //address_uploads[msg.sender][txNumber] = Upload(_ipfsHash, txHash, _author, _filename, _timestamp);
+    //uploads[txNumber] = Upload(_ipfsHash, txHash, _author, _filename, _timestamp);  
     ipfsHash = _ipfsHash;
     txHash = txHash;  //already declared
     author = _author;

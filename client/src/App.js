@@ -189,15 +189,47 @@ button_latest_upload = async (event) => {
 }
 
 button_download = async (event) => {
-    //https://stackoverflow.com/questions/48035864/how-download-file-via-ipfs-using-nodejs
-    const fileHash = await this.state.contract.methods.getIPFS().call();
+    //Bit clunky, but download retrieves the file buffer from IPFS.
+    //Buffer is converted to utf8 string and saved to plain text file
+    //Filename resets the text file format.
 
+    const download = (filename, filebuffer) => {
+    //path = url
+    //https://attacomsian.com/blog/javascript-download-file
+    // Create a new link
+    const anchor = document.createElement('a');
+    anchor.style.display = 'none';
+    // Append to the DOM
+    document.body.appendChild(anchor);
+    
+    const blob = new Blob([filebuffer], {type:'text/plain'});
+    const objectURL = URL.createObjectURL(blob);
+
+    //Pass path and filename rather than file buffer. Issue is it is displayed in html?
+    
+    anchor.href = objectURL;
+    anchor.href = URL.createObjectURL( blob );
+    //anchor.href = path;
+    anchor.download = filename;
+
+    anchor.click();
+    };
+
+    const fileHash = await this.state.contract.methods.getIPFS().call();
+    const fileName = await this.state.contract.methods.getFileName().call();
+    let link = 'https://ipfs.io/ipfs/'+fileHash;
+
+    //IPFS get? 
+
+    //https://stackoverflow.com/questions/48035864/how-download-file-via-ipfs-using-nodejs
     ipfs.files.get(fileHash, function (err, files) {
-    files.forEach((file) => {
-        console.log(file.path)
-        console.log("File content >> ",file.content.toString('utf8'))
+      files.forEach((file) => {
+        console.log("File Path >> ", link)
+        console.log("File Content >> ",file.content.toString('utf8'))  //.toString('utf8')
+        download(fileName, file.content);
+        //download(link, fileName);
+      })
     })
-  })
 }
 
 
@@ -278,7 +310,7 @@ button_blockSelect = async (event) =>
          Show Latest Upload
          </button>
          <button className="download_button" type="button" onClick={this.button_download}> 
-         Download
+         Download Latest File
          </button>
          <br></br>
          <output className="show_upload" id="show_upload"></output>
