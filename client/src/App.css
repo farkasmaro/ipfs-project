@@ -114,7 +114,29 @@ Keep page fit to size
   color: black;
 }
 
+/*Download Button */
+.download_button {
+  margin-bottom: 20px;
+  margin-left: 5px;
+  margin-top: 5px;
+  padding: 5px;
+  background-color: #ff5252;
+  font-family: 'Montserrat', sans-serif;
+  color: white;
+  font-size: 20px;
+}
+.download_button:hover {
+  background-color: #eee;
+  color: black;
+}
+
 .show_block {
+  white-space: pre-line;
+  font-size: 15px;
+}
+
+.show_upload
+{
   white-space: pre-line;
   font-size: 15px;
 }

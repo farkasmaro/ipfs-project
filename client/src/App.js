@@ -129,7 +129,6 @@ class App extends Component {
         console.error(error)  //error handling
         return
       }
-    
       //--   Update blockchain   --
       // test sending more details to contract:
       //- function upload(string memory _ipfsHash, string memory _author, uint _timestamp) public {
@@ -165,24 +164,42 @@ button_latest_upload = async (event) => {
   const{ contract, address } = this.state;
   try{
 
-    const txNumber = await this.state.contract.methods.getTxNumber().call();
-    let ipfsHash = contract.methods.getIPFS();
-    //let txHash = await contract.methods.getTxHash().call();
-    let author = contract.methods.getAuthor();
-    const filename = await this.state.contract.methods.getFileName().call();
-    let timestamp = contract.methods.getTimestamp();
-  
-    console.log('filename: ', await this.state.contract.methods.getFileName().call())
+    let txNumber = await this.state.contract.methods.getTxNumber().call();
+    let ipfsHash = await this.state.contract.methods.getIPFS().call();
+    let txHash = await this.state.contract.methods.getTxHash().call();
+    let author = await this.state.contract.methods.getAuthor().call();
+    let filename = await this.state.contract.methods.getFileName().call();
+    let timestamp = await this.state.contract.methods.getTimestamp().call();
+   
     console.log('txNumber: ', txNumber)
-    document.getElementById("show_upload").innerHTML = filename;
+    console.log('ipfsHash: ', ipfsHash)
+    console.log('txHash: ', txHash)
+    console.log('author: ', author)
+    console.log('filename: ', filename)
+    console.log('timestamp: ',  timestamp)
+
+    var buffer = "Transaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTrasanction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp;
+
+    document.getElementById("show_upload").innerHTML = buffer;
   }
   catch (error){
     alert('Error: Unable to show latest upload.')
     console.error(error)
   }
-
-
 }
+
+button_download = async (event) => {
+    //https://stackoverflow.com/questions/48035864/how-download-file-via-ipfs-using-nodejs
+    const fileHash = await this.state.contract.methods.getIPFS().call();
+
+    ipfs.files.get(fileHash, function (err, files) {
+    files.forEach((file) => {
+        console.log(file.path)
+        console.log("File content >> ",file.content.toString('utf8'))
+    })
+  })
+}
+
 
 button_latest_block = async (event) => {
   //needs to be asynchronous to read the latest transaction from block. 
@@ -259,6 +276,9 @@ button_blockSelect = async (event) =>
          <p>Search elements on smart contract. </p>
          <button className="view_upload_button" type="button" onClick={this.button_latest_upload}> 
          Show Latest Upload
+         </button>
+         <button className="download_button" type="button" onClick={this.button_download}> 
+         Download
          </button>
          <br></br>
          <output className="show_upload" id="show_upload"></output>
