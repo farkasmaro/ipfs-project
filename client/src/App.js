@@ -1,31 +1,13 @@
 //Client side application - handling back end & GUI
 import React, { Component } from "react";
+import { NavLink, Routes, Route } from 'react-router-dom';
 import ProvStorageContract from "./contracts/ProvStorage.json";
 import getWeb3 from "./getWeb3";  
 //import web3 from "web3";
 //Included with truffle box - enables the client side app to talk to ethereum chain
 //Can fetch read/write data from smart contracts. 
 import ipfs from './ipfs'  //importing node connectino settings from ./ipfs.js
-
 import "./App.css"
-
-//--some encryption functions--
-var crypto = require('crypto'),
-    algorithm = 'aes-256-ctr',
-    password = '123456789AJBCOAhsb';
-    
-function encrypt(buffer){
-  var cipher = crypto.createCipher(algorithm,password)
-  var crypted = Buffer.concat([cipher.update(buffer),cipher.final()]);
-  return crypted;
-}
- 
-function decrypt(buffer){
-  var decipher = crypto.createDecipher(algorithm,password)
-  var dec = Buffer.concat([decipher.update(buffer) , decipher.final()]);
-  return dec;
-}
-//---
 
 class App extends Component {
 
@@ -80,9 +62,7 @@ class App extends Component {
 
     } catch (error) {
       // Catch any errors for any of the above operations.
-      alert(
-        `Failed to load web3, accounts, or contract. Check console for details.`,
-      );
+      alert(`Failed to load web3, accounts, or contract. Check console for details.`,);
       console.error(error);
     }
   };
@@ -171,14 +151,23 @@ button_latest_upload = async (event) => {
     let filename = await this.state.contract.methods.getFileName().call();
     let timestamp = await this.state.contract.methods.getTimestamp().call();
    
+    //convert unix timestamp to datetime
+    let date = new Date(+timestamp); //+ to convert to int
+    let datetime  = ("Date: "+date.getDate()+
+                     "/"+(date.getMonth()+1)+
+                     "/"+date.getFullYear()+
+                     " "+date.getHours()+
+                     ":"+date.getMinutes()+
+                     ":"+date.getSeconds()).toString();
+    
+
     console.log('txNumber: ', txNumber)
     console.log('ipfsHash: ', ipfsHash)
     console.log('txHash: ', txHash)
     console.log('author: ', author)
     console.log('filename: ', filename)
-    console.log('timestamp: ',  timestamp)
-
-    var buffer = "Transaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTrasanction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp;
+    console.log('timestamp: ',  datetime)
+    var buffer = "Transaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTrasanction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp + "\n" + datetime;
 
     document.getElementById("show_upload").innerHTML = buffer;
   }
@@ -222,18 +211,26 @@ button_download = async (event) => {
     //IPFS get? 
 
     //https://stackoverflow.com/questions/48035864/how-download-file-via-ipfs-using-nodejs
-    ipfs.files.get(fileHash, function (err, files) {
-      files.forEach((file) => {
-        console.log("File Path >> ", link)
-        console.log("File Content >> ",file.content.toString('utf8'))  //.toString('utf8')
-        download(fileName, file.content);
-        //download(link, fileName);
+    try
+    {
+      ipfs.files.get(fileHash, function (err,files) {
+        files.forEach((file) => {
+          console.log("File Path >> ", link)
+          console.log("File Content >> ",file.content.toString('utf8'))  //.toString('utf8')
+          download(fileName, file.content);
+          //download(link, fileName);
+        })
       })
-    })
+    }
+    catch(error)
+    {
+      console.error(error);
+      alert('Error: No file found.');
+    }
 }
 
-
 button_latest_block = async (event) => {
+  event.preventDefault();
   //needs to be asynchronous to read the latest transaction from block. 
   console.log('Latest block button pressed..');
 
@@ -274,64 +271,109 @@ button_blockSelect = async (event) =>
 }
 
 //-- Render functions --
-
 //This is my react render that couples components with markup
-//Edit the GUI below (currently just a template):
-// - Favicon not working yet
+// In order to maintain the state variables, I need to pass them to from the source component to the functional components
   render() {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
     return (
-      <div className="App">
-      <nav className= "navbar">
-         <a href="#" className= "heading">IPFS File Upload</a>
-         <link rel="icon" type="image/x-icon" href="/favicon_io/favicon.ico">
-         </link>
-      </nav>
-      <main className="container">
-         <h1>IPFS and Blockchain File Storage</h1>
+      <div className='App'>
+        <Navigation />
+        <div className="container">
+        <Routes>
+          <Route path='/upload' element={<Upload 
+              //passing state
+              ipfsHash = {this.state.ipfsHash}
+              onSubmit = {this.onSubmit}
+              captureFile = {this.captureFile}/>}></Route>
+          <Route path='/download' element={<Download
+              //passing state functions
+              button_latest_upload = {this.button_latest_upload}
+              button_download = {this.button_download}/>}></Route>
+          <Route path='/verify' element={<Verify
+              button_blockSelect = {this.button_blockSelect}
+              button_latest_block = {this.button_latest_block}/>}></Route>
+        </Routes>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+}
+
+//Don't think this can work because props go to Main & then go to the individual functions
+// - Removed main instead!
+
+//            <a><NavLink to='/'>Home</NavLink></a>
+
+const Navigation = () => (
+  <nav className= "navbar">
+      <b href="#" className= "heading"> IPFS File Upload</b>    
+            <a><NavLink to='/verify'>Verify</NavLink></a>
+            <a><NavLink to='/download'>Download</NavLink></a>
+            <a><NavLink to='/upload'>Upload</NavLink></a>       
+  </nav>
+);
+
+const Upload = (props) => (
+  //access state using 'props' aka properties.
+  <div className ='upload'>
+  <h1>IPFS and Blockchain File Storage</h1>
          <p>This file is stored on IPFS & The Ethereum Blockchain!</p>
-         <img src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
+         <img src={`https://ipfs.io/ipfs/${props.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
          <h2>Upload File</h2>
-         <form onSubmit={this.onSubmit} > 
-            <label for="author"> Insert Name:  </label>
+         <form onSubmit={props.onSubmit} > 
+            <label htmlFor="author"> Insert Name:  </label>
             <input className="author" id="author" type='text'/>
             <br></br>
-            <input className="captureFile" id="captureFile" type='file' onChange={this.captureFile}/>
+            <input className="captureFile" id="captureFile" type='file' onChange={props.captureFile}/>
             <input className="submit" type='submit' />
             <br></br>
             <output id="ipfsURL"></output>
             <br></br>
          </form>
-         <h3>View Uploads</h3>
+  </div>
+);
+
+const Download = (props) => (
+  <div className= 'download'>
+  <h3>View Uploads</h3>
          <p>Search elements on smart contract. </p>
-         <button className="view_upload_button" type="button" onClick={this.button_latest_upload}> 
+         <button className="view_upload_button" type="button" onClick={props.button_latest_upload}> 
          Show Latest Upload
          </button>
-         <button className="download_button" type="button" onClick={this.button_download}> 
+         <button className="download_button" type="button" onClick={props.button_download}> 
          Download Latest File
          </button>
          <br></br>
          <output className="show_upload" id="show_upload"></output>
          <br></br>
-         <h4>View Blockchain</h4>
+  </div>
+);
+
+const Verify = (props) => (
+  <div className='verify'>
+  <h4>View Blockchain</h4>
          <p>Search blockchain using block number or transaction hash. (e.g., '1','2','0x46e5...')</p>
-         <form onSubmit={this.button_blockSelect} >
+         <form onSubmit={props.button_blockSelect} >
             <input id="blockNum" type='text'/>
             <input className="submit" type='submit' />
          </form>
-         <button className="blockbutton" type="button" onClick={this.button_latest_block}> 
+         <button className="blockbutton" type="button" onClick={props.button_latest_block}> 
          Show Latest Block
          </button>
          <br></br>
          <output className="show_block" id="show_block"></output>
          <br></br>
-      </main>
-   </div>
-    );
-  }
-}
+  </div>
+);
+
+const Footer = () => (
+    <div className='footer'>
+    Farkas Maro | farkasmaro@gmail.com | UWE: Digital Systems Project 
+  </div>
+);
 
 export default App;
 

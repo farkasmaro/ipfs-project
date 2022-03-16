@@ -1,0 +1,48 @@
+<div className="App">
+   <link rel="icon" type="image/x-icon" href="/favicon_io/favicon.ico"></link>
+ <nav className= "navbar">
+ <b href="#" className= "heading"> IPFS File Upload</b>     
+       <a href="verify.html">Verify</a>
+       <a href="download.html">Download</a>
+       <a href="upload.html">Upload</a>      
+ </nav>
+ <main className="container">
+    <h1>IPFS and Blockchain File Storage</h1>
+    <p>This file is stored on IPFS & The Ethereum Blockchain!</p>
+    <img src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
+    <h2>Upload File</h2>
+    <form onSubmit={this.onSubmit} > 
+       <label for="author"> Insert Name:  </label>
+       <input className="author" id="author" type='text'/>
+       <br></br>
+       <input className="captureFile" id="captureFile" type='file' onChange={this.captureFile}/>
+       <input className="submit" type='submit' />
+       <br></br>
+       <output id="ipfsURL"></output>
+       <br></br>
+    </form>
+    <h3>View Uploads</h3>
+    <p>Search elements on smart contract. </p>
+    <button className="view_upload_button" type="button" onClick={this.button_latest_upload}> 
+    Show Latest Upload
+    </button>
+    <button className="download_button" type="button" onClick={this.button_download}> 
+    Download Latest File
+    </button>
+    <br></br>
+    <output className="show_upload" id="show_upload"></output>
+    <br></br>
+    <h4>View Blockchain</h4>
+    <p>Search blockchain using block number or transaction hash. (e.g., '1','2','0x46e5...')</p>
+    <form onSubmit={this.button_blockSelect} >
+       <input id="blockNum" type='text'/>
+       <input className="submit" type='submit' />
+    </form>
+    <button className="blockbutton" type="button" onClick={this.button_latest_block}> 
+    Show Latest Block
+    </button>
+    <br></br>
+    <output className="show_block" id="show_block"></output>
+    <br></br>
+ </main>
+</div>
