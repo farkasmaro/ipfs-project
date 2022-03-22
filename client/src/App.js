@@ -9,6 +9,27 @@ import getWeb3 from "./getWeb3";
 import ipfs from './ipfs'  //importing node connectino settings from ./ipfs.js
 import "./App.css"
 
+//Attempting to retrieve IP from amazon AWS checkIP but currently fails to return a value. 
+//https://ipdata.co/blog/how-to-get-the-ip-address-in-javascript/
+function getIPFromAmazon() {
+  fetch("https://checkip.amazonaws.com/", {mode: 'no-cors'}).then(res => res.text()).then(data => console.log('IP Address: ',data))
+// 'no-cors' mode does not return anything
+// See this for resolution:  https://stackoverflow.com/questions/43262121/trying-to-use-fetch-and-pass-in-mode-no-cors
+}
+
+function getDateFromUnix(timestamp)
+{
+  //convert unix timestamp to datetime
+  let date = new Date(+timestamp); //+ to convert to int
+  let datetime  = ("Date: "+date.getDate()+
+                   "/"+(date.getMonth()+1)+
+                   "/"+date.getFullYear()+
+                   " "+date.getHours()+
+                   ":"+date.getMinutes()+
+                   ":"+date.getSeconds()).toString();
+  return datetime;
+}
+
 class App extends Component {
 
   state = {ipfsHash: "empty", storageValue: 0, web3: null, accounts: null, contract: null };
@@ -139,37 +160,30 @@ class App extends Component {
   }
 
 button_latest_upload = async (event) => {
-// CURRENTLY RETURNING OBJECT NOT ACTUAL VALUE OF VARIABLE.
   console.log('Latest upload button pressed...')
-  const{ contract, address } = this.state;
+  getIPFromAmazon()
+  const{ contract } = this.state;
   try{
 
-    let txNumber = await this.state.contract.methods.getTxNumber().call();
-    let ipfsHash = await this.state.contract.methods.getIPFS().call();
-    let txHash = await this.state.contract.methods.getTxHash().call();
-    let author = await this.state.contract.methods.getAuthor().call();
-    let filename = await this.state.contract.methods.getFileName().call();
-    let timestamp = await this.state.contract.methods.getTimestamp().call();
+    let txNumber = await contract.methods.getTxNumber().call();
+    let ipfsHash = await contract.methods.getIPFS().call();
+    let txHash = await contract.methods.getTxHash().call();
+    let author = await contract.methods.getAuthor().call();
+    let filename = await contract.methods.getFileName().call();
+    let timestamp = await contract.methods.getTimestamp().call();
    
-    //convert unix timestamp to datetime
-    let date = new Date(+timestamp); //+ to convert to int
-    let datetime  = ("Date: "+date.getDate()+
-                     "/"+(date.getMonth()+1)+
-                     "/"+date.getFullYear()+
-                     " "+date.getHours()+
-                     ":"+date.getMinutes()+
-                     ":"+date.getSeconds()).toString();
-    
+    let datetime = getDateFromUnix(timestamp);
 
     console.log('txNumber: ', txNumber)
     console.log('ipfsHash: ', ipfsHash)
     console.log('txHash: ', txHash)
     console.log('author: ', author)
     console.log('filename: ', filename)
-    console.log('timestamp: ',  datetime)
-    var buffer = "Transaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTrasanction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp + "\n" + datetime;
+    console.log('timestamp: ',  timestamp)
+    console.log(datetime)
+    var buffer = "Transaction Type: Upload\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTrasanction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp + "\n" + datetime;
 
-    document.getElementById("show_upload").innerHTML = buffer;
+    document.getElementById("show_latest").innerHTML = buffer;
   }
   catch (error){
     alert('Error: Unable to show latest upload.')
@@ -177,13 +191,44 @@ button_latest_upload = async (event) => {
   }
 }
 
+button_latest_download = async (event) =>{
+  console.log('Latest download button pressed...')
+  const{ contract } = this.state;
+
+  try
+  {
+    let ipfsHash = await contract.methods.getIPFS_down().call();
+    let filename = await contract.methods.getFileName_down().call();
+    let timestamp = await contract.methods.getTimestamp_down().call();
+    let txNumber = await contract.methods.getTxNumber_down().call();
+    let downloader = await contract.methods.getDownloader().call();
+    
+    let datetime = getDateFromUnix(timestamp);
+
+    console.log('----- Download -----')
+    console.log('downloader: ', downloader);
+    console.log('ipfsHash: ', ipfsHash);
+    console.log('filename: ', filename);
+    console.log('datetime: ', datetime);
+
+    var buffer = "Transaction Type: DOWNLOAD" +"\nDownloader: " + downloader + "\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nFilename: " + filename + "\n" + datetime;
+    document.getElementById("show_latest").innerHTML = buffer;
+  }
+  catch (error)
+  {
+    console.error(error);
+    alert('Error: Unable to show latest download.');
+  }
+  
+}
+
 button_download = async (event) => {
+    const {contract, accounts } = this.state;
     //Bit clunky, but download retrieves the file buffer from IPFS.
     //Buffer is converted to utf8 string and saved to plain text file
     //Filename resets the text file format.
 
     const download = (filename, filebuffer) => {
-    //path = url
     //https://attacomsian.com/blog/javascript-download-file
     // Create a new link
     const anchor = document.createElement('a');
@@ -192,24 +237,32 @@ button_download = async (event) => {
     document.body.appendChild(anchor);
     
     const blob = new Blob([filebuffer], {type:'text/plain'});
-    const objectURL = URL.createObjectURL(blob);
-
-    //Pass path and filename rather than file buffer. Issue is it is displayed in html?
     
-    anchor.href = objectURL;
     anchor.href = URL.createObjectURL( blob );
     //anchor.href = path;
     anchor.download = filename;
-
     anchor.click();
     };
 
-    const fileHash = await this.state.contract.methods.getIPFS().call();
-    const fileName = await this.state.contract.methods.getFileName().call();
+    const fileHash = await contract.methods.getIPFS().call();
+    const fileName = await contract.methods.getFileName().call();
+    let downloader = document.getElementById("downloader").value;
     let link = 'https://ipfs.io/ipfs/'+fileHash;
 
-    //IPFS get? 
-
+    //First Create a transaction for the download
+    try
+    {
+      let time = "" + Date.now();
+      contract.methods.download(fileHash, fileName, time, downloader).send({from : accounts[0]}).then((r) => {
+        console.log('Download transaction created.')
+      })
+    } 
+    catch (error)
+    {
+      console.error(error);
+      alert('Error: Unable to create transaction.');
+    }
+    //-- Then initiate download
     //https://stackoverflow.com/questions/48035864/how-download-file-via-ipfs-using-nodejs
     try
     {
@@ -289,11 +342,13 @@ button_blockSelect = async (event) =>
               captureFile = {this.captureFile}/>}></Route>
           <Route path='/download' element={<Download
               //passing state functions
-              button_latest_upload = {this.button_latest_upload}
               button_download = {this.button_download}/>}></Route>
           <Route path='/verify' element={<Verify
               button_blockSelect = {this.button_blockSelect}
-              button_latest_block = {this.button_latest_block}/>}></Route>
+              button_latest_block = {this.button_latest_block}
+              button_latest_upload = {this.button_latest_upload}
+              button_latest_download = {this.button_latest_download}/>}></Route>
+              
         </Routes>
         </div>
         <Footer />
@@ -338,23 +393,19 @@ const Upload = (props) => (
 
 const Download = (props) => (
   <div className= 'download'>
-  <h3>View Uploads</h3>
-         <p>Search elements on smart contract. </p>
-         <button className="view_upload_button" type="button" onClick={props.button_latest_upload}> 
-         Show Latest Upload
-         </button>
+  <h3>Download file from IPFS</h3>
+        <label htmlFor="downloader"> Insert Name:  </label>
+            <input className="downloader" id="downloader" type='text'/>
+            <br></br>
          <button className="download_button" type="button" onClick={props.button_download}> 
          Download Latest File
          </button>
-         <br></br>
-         <output className="show_upload" id="show_upload"></output>
-         <br></br>
   </div>
 );
 
 const Verify = (props) => (
   <div className='verify'>
-  <h4>View Blockchain</h4>
+  <h4>View Blockchain & Smart Contract</h4>
          <p>Search blockchain using block number or transaction hash. (e.g., '1','2','0x46e5...')</p>
          <form onSubmit={props.button_blockSelect} >
             <input id="blockNum" type='text'/>
@@ -366,6 +417,17 @@ const Verify = (props) => (
          <br></br>
          <output className="show_block" id="show_block"></output>
          <br></br>
+         <p>Search elements on smart contract. </p>
+         <button className="view_upload_button" type="button" onClick={props.button_latest_upload}> 
+         Show Latest Upload
+         </button>
+         <button className="view_download_button" type="button" onClick={props.button_latest_download}> 
+         Show Latest Download
+         </button>
+         <br></br>
+         <output className="show_latest" id="show_latest"></output>
+         <br></br>
+         
   </div>
 );
 

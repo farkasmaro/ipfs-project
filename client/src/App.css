@@ -130,6 +130,7 @@ Keep page fit to size
 .view_upload_button {
   margin-bottom: 20px;
   margin-top: 5px;
+  margin-right: 2px;
   padding: 5px;
   background-color: #ff5252;
   font-family: 'Montserrat', sans-serif;
@@ -137,6 +138,22 @@ Keep page fit to size
   font-size: 20px;
 }
 .view_upload_button:hover {
+  background-color: #eee;
+  color: black;
+}
+
+/* Show Latest Download Button */
+.view_download_button {
+  margin-bottom: 20px;
+  margin-top: 5px;
+  margin-left: 2px;
+  padding: 5px;
+  background-color: #ff5252;
+  font-family: 'Montserrat', sans-serif;
+  color: white;
+  font-size: 20px;
+}
+.view_download_button:hover {
   background-color: #eee;
   color: black;
 }
@@ -162,7 +179,7 @@ Keep page fit to size
   font-size: 15px;
 }
 
-.show_upload
+.show_latest
 {
   white-space: pre-line;
   font-size: 15px;

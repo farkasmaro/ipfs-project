@@ -4,26 +4,37 @@ pragma solidity >=0.5.16 <8.10.0;
 contract ProvStorage {
   string ipfsHash;
   //not using transaction ID like this. 
-  uint txNumber = 0;
+  uint txNumber= 0;
+  uint txNumber_download = 0;
 
   uint blockNumber = block.number;
   bytes32 txHash =  (blockhash(blockNumber -1));
 
-// Mapping of structs
-   struct Upload {
-    //struct for each upload instance
-    string ipfsHash;
-    bytes32 txHash;
-    string author;
-    string filename;
-    uint timestamp;  
-  }
+// Upload structure
+struct Upload {
+  //struct for each upload instance
+  string ipfsHash;
+  bytes32 txHash;
+  string author;
+  string filename;
+  uint timestamp;  
+}
+//Download Structure - Download instances also added to chain
+struct Download {
+  string ipfsHash;
+  string filename;
+  uint timestamp;
+  string downloader;
+  //string ip;  need to pull from dapp
+}
 //Mappings:
 
   mapping(uint => Upload) public uploads;
-  //Transaction ID maps to an Upload instance
+  //txNumber maps to an Upload instance
+  mapping(uint=> Download) public downloads;
+  //txNumber_downloads maps to Download instance?
 
-  mapping(address => mapping(uint => Upload)) public address_uploads;
+  mapping(address => mapping(uint => Upload)) public address_uploads;  //NOT IN USE
   //Uploads can also be mapped to an address (the account of the person who created the upload.)
 
   function upload(string memory _ipfsHash, string memory _author, string memory _filename, uint _timestamp) public {
@@ -33,7 +44,13 @@ contract ProvStorage {
     //address_uploads[msg.sender][txNumber] = Upload(_ipfsHash, txHash, _author, _filename, _timestamp);
     uploads[txNumber] = Upload(_ipfsHash, txHash, _author, _filename, _timestamp);  
   }
+
+  function download(string memory _ipfsHash, string memory _filename, uint _time, string memory _downloader) public {
+    txNumber_download = txNumber_download +1;
+    downloads[txNumber_download] = Download(_ipfsHash, _filename, _time, _downloader);
+  }
   
+  //---------Upload Get---------
   function getTxNumber() public view returns (uint){
     //return the latest transaction number
     return txNumber;
@@ -69,6 +86,26 @@ contract ProvStorage {
     return uploads[txNumber].timestamp;
   }
   //-------------------------------------------------------------
+//----------- Download Get ------------------
+  function getTxNumber_down() public view returns (uint){
+    //return the latest transaction number
+    return txNumber_download;
+  }
+
+  function getIPFS_down() public view returns (string memory){
+    return downloads[txNumber_download].ipfsHash;
+  }
+
+  function getFileName_down() public view returns (string memory){
+    return downloads[txNumber_download].filename;
+  }
+
+  function getTimestamp_down() public view returns (uint){
+    return downloads[txNumber_download].timestamp;
+  }
+  function getDownloader() public view returns (string memory){
+    return downloads[txNumber_download].downloader;
+  }
 }
 
 //msg.sender = the address of the acccount currently running contract.
