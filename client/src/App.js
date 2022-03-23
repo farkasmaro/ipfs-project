@@ -34,7 +34,7 @@ class App extends Component {
 
   state = {ipfsHash: "empty", storageValue: 0, web3: null, accounts: null, contract: null };
 
-  //specific to react.js - need to bind variables to 'this' instance
+  //Specific to react.js - need to bind variables to 'this' instance
   captureFile = this.captureFile.bind(this);
   onSubmit = this.onSubmit.bind(this);
 
@@ -69,7 +69,7 @@ class App extends Component {
         //the 'await' returns the value inside the promise if value, and set the state. 
 
       this.setState({ipfsHash: readipfsHash});
-      console.log('Latest hash: ', readipfsHash)  
+      console.log('Latest ipfshash: ', readipfsHash)  
 
       //-- try retrieve transaction information -- 
       const eth_address = await this.state.contract._address;
@@ -90,7 +90,6 @@ class App extends Component {
 
 
   //Handlers for file capture and submit
-
   captureFile(event){
     try
     {
@@ -115,10 +114,16 @@ class App extends Component {
       console.error(error);
     }
   }
-
   
-  onSubmit(event) {
-    const { accounts, contract, buffer } = this.state;
+  getLatestBlockHash = async (event) =>{
+    let block =  await this.state.web3.eth.getBlock("latest"); 
+    let blockhash = block.hash;
+    console.log("new blockhash: ", blockhash);
+    return blockhash; 
+  }
+
+  onSubmit(event){
+    const { accounts, contract, buffer, ipfsHash, web3 } = this.state;
 
     event.preventDefault()  //Prevent refreshing of page
     console.log('On submit...')
@@ -130,6 +135,7 @@ class App extends Component {
         console.error(error)  //error handling
         return
       }
+    
       //--   Update blockchain   --
       // test sending more details to contract:
       //- function upload(string memory _ipfsHash, string memory _author, uint _timestamp) public {
@@ -145,18 +151,15 @@ class App extends Component {
 
       //contract.methods.set(result[0].hash).send({from : accounts[0]}).then((r) => {
       contract.methods.upload(result[0].hash, author, filename, time).send({from : accounts[0]}).then((r) => {
-        console.log('new ipfsHash: ', result[0].hash)
-        this.setState({ipfsHash: result[0].hash})
-        let url = "url: www.ipfs.io/ipfs/" + this.state.ipfsHash;
-        document.getElementById("ipfsURL").innerHTML = url;
-        return
-      })   
+        //neet to call after .then() to get current blockhash.
+        let blockhash = this.getLatestBlockHash();
+        contract.methods.updateTxHash(blockhash.toString());
+      })
+      console.log('new ipfsHash: ', result[0].hash)
+      this.setState({ipfsHash: result[0].hash})
+      let url = "url: www.ipfs.io/ipfs/" + ipfsHash;
+      document.getElementById("ipfsURL").innerHTML = url;
     })
-    // --- Test symmetric encrypt ---
-    // var hw = encrypt(new Buffer("Farkas Maro encrypt me", "utf8"))
-    
-    //console.log(hw);
-    //console.log(decrypt(hw).toString('utf8'))
   }
 
 button_latest_upload = async (event) => {
@@ -167,11 +170,12 @@ button_latest_upload = async (event) => {
 
     let txNumber = await contract.methods.getTxNumber().call();
     let ipfsHash = await contract.methods.getIPFS().call();
-    let txHash = await contract.methods.getTxHash().call();
+    let txHash = await contract.methods.getTxHash().call().toString();
     let author = await contract.methods.getAuthor().call();
     let filename = await contract.methods.getFileName().call();
     let timestamp = await contract.methods.getTimestamp().call();
    
+    txHash.toString();
     let datetime = getDateFromUnix(timestamp);
 
     console.log('txNumber: ', txNumber)
@@ -181,9 +185,12 @@ button_latest_upload = async (event) => {
     console.log('filename: ', filename)
     console.log('timestamp: ',  timestamp)
     console.log(datetime)
-    var buffer = "Transaction Type: Upload\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTrasanction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp + "\n" + datetime;
-
+    var buffer = "Transaction Type: UPLOAD\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransanction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp + "\n" + datetime;
+  
+    //let fullblock = await contract.methods.getUploadByTxNumber(4).call();
     document.getElementById("show_latest").innerHTML = buffer;
+    //console.log(fullblock);
+    //document.getElementById("show_latest").innerHTML = fullblock;
   }
   catch (error){
     alert('Error: Unable to show latest upload.')
@@ -288,13 +295,16 @@ button_latest_block = async (event) => {
   console.log('Latest block button pressed..');
 
   let block = await this.state.web3.eth.getBlock("latest");
-
+  
   console.log('Latest Block', block);
   let block_txt = "";
   for (const [key, value] of Object.entries(block)) {
     block_txt += (key + ": " + value + " \n");
   };
   document.getElementById("show_block").innerHTML = block_txt;
+  //Get Hash 
+  var blockhash = block.hash;
+  console.log('Hash: ', blockhash);
   return
 }
 
