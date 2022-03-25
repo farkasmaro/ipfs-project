@@ -106,7 +106,6 @@ class App extends Component {
         console.log('buffer', this.state.buffer)
         alert('Uploaded file converted to array buffer.');
       }
-
     }
     catch (error)
     {
@@ -152,8 +151,14 @@ class App extends Component {
       //contract.methods.set(result[0].hash).send({from : accounts[0]}).then((r) => {
       contract.methods.upload(result[0].hash, author, filename, time).send({from : accounts[0]}).then((r) => {
         //neet to call after .then() to get current blockhash.
-        let blockhash = this.getLatestBlockHash();
-        contract.methods.updateTxHash(blockhash.toString());
+        this.getLatestBlockHash().then(function(result){
+          //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.
+          let blockhash = result;
+          console.log("**** update txHash", blockhash);
+          //call ' update' after the creation of the transaction.
+          contract.methods.updateTxHash(blockhash).send({from : accounts[0]});
+          //This method requires Gas to be called, but now working.
+        });
       })
       console.log('new ipfsHash: ', result[0].hash)
       this.setState({ipfsHash: result[0].hash})
@@ -171,9 +176,9 @@ button_latest_upload = async (event) => {
     
     let txNumber = await contract.methods.getTxNumber().call();
     let ipfsHash = await contract.methods.getIPFS().call();
-    console.log('getting hash')
-    let txHash = contract.methods.getTxHash().call().toString();
-    console.log('txHash: ', txNumber)
+    console.log('**** getting hash ***');
+    let txHash = await contract.methods.getTxHash().call();
+    console.log('txHash: ', txHash);
     let author = await contract.methods.getAuthor().call();
     let filename = await contract.methods.getFileName().call();
     let timestamp = await contract.methods.getTimestamp().call();
@@ -181,13 +186,13 @@ button_latest_upload = async (event) => {
     
     let datetime = getDateFromUnix(timestamp);
 
-    //console.log('txNumber: ', txNumber)
+    console.log('txNumber: ', txNumber)
     console.log('ipfsHash: ', ipfsHash)
     console.log('author: ', author)
     console.log('filename: ', filename)
     console.log('timestamp: ',  timestamp)
     console.log(datetime)
-    var buffer = "Transaction Type: UPLOAD\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransanction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp + "\n" + datetime;
+    var buffer = "Transaction Type: UPLOAD\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp + "\n" + datetime;
   
     //let fullblock = await contract.methods.getUploadByTxNumber(4).call();
     document.getElementById("show_latest").innerHTML = buffer;
