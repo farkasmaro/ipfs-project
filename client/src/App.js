@@ -27,7 +27,7 @@ function getDateFromUnix(timestamp)
                    " "+date.getHours()+
                    ":"+date.getMinutes()+
                    ":"+date.getSeconds()).toString();
-  return datetime;
+  return datetime ;
 }
 
 class App extends Component {
@@ -168,19 +168,21 @@ button_latest_upload = async (event) => {
   const{ contract } = this.state;
   try{
 
+    
     let txNumber = await contract.methods.getTxNumber().call();
     let ipfsHash = await contract.methods.getIPFS().call();
-    let txHash = await contract.methods.getTxHash().call().toString();
+    console.log('getting hash')
+    let txHash = contract.methods.getTxHash().call().toString();
+    console.log('txHash: ', txNumber)
     let author = await contract.methods.getAuthor().call();
     let filename = await contract.methods.getFileName().call();
     let timestamp = await contract.methods.getTimestamp().call();
    
-    txHash.toString();
+    
     let datetime = getDateFromUnix(timestamp);
 
-    console.log('txNumber: ', txNumber)
+    //console.log('txNumber: ', txNumber)
     console.log('ipfsHash: ', ipfsHash)
-    console.log('txHash: ', txHash)
     console.log('author: ', author)
     console.log('filename: ', filename)
     console.log('timestamp: ',  timestamp)

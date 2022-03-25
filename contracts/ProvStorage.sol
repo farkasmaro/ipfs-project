@@ -9,7 +9,7 @@ contract ProvStorage {
 
   //uint blockNumber = block.number;
   //bytes32 txHash =  (blockhash(blockNumber -1));
-  string txHash = "empty";
+  //string txHash = "empty";
 
 // Upload structure
 struct Upload {
@@ -88,7 +88,7 @@ function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
     //associate an upload with address and create the instance
     txNumber = txNumber +1;
     //address_uploads[msg.sender][txNumber] = Upload(_ipfsHash, txHash, _author, _filename, _timestamp);
-    uploads[txNumber] = Upload(_ipfsHash, txHash , _author, _filename, _timestamp);  
+    uploads[txNumber] = Upload(_ipfsHash, "" , _author, _filename, _timestamp);  
   }
 
   function download(string memory _ipfsHash, string memory _filename, uint _time, string memory _downloader) public {
@@ -132,6 +132,7 @@ function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
     //return the ipfsHash taking transaction ID & msg.sender.
     //return address_uploads[msg.sender][txNumber].ipfsHash;
     return uploads[txNumber].ipfsHash;
+    //return getTxHash();
   }
 
   function getTxHash() public view returns (string memory){
