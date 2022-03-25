@@ -8,8 +8,9 @@ module.exports = {
     develop: {
       host: "127.0.0.1",
       port: 7545,
-      network_id: "*"  //match any network ID
-
+      network_id: "*", //match any network ID
+      //gas: 400,
+      //gasPrice: 22000000 // Specified in Wei
     }
   }
 };

@@ -205,6 +205,43 @@ button_latest_upload = async (event) => {
   }
 }
 
+button_latest_upload_TEST = async (event) => {
+  console.log('Test button pressed')
+  getIPFromAmazon()
+  const{ contract } = this.state;
+  try{
+
+    
+    let txNumber = await contract.methods.getTxNumber().call();
+    let ipfsHash = await contract.methods.getIPFS_t().call();
+    let txHash = await contract.methods.getTxHash_t().call();
+    let author = await contract.methods.getAuthor_t().call();
+    let filename = await contract.methods.getFileName_t().call();
+    let timestamp = await contract.methods.getTimestamp_t().call();
+   
+    
+    let datetime = getDateFromUnix(timestamp);
+
+    console.log('txNumber: ', txNumber)
+    console.log('ipfsHash: ', ipfsHash)
+    console.log('txHash: ', txHash)
+    console.log('author: ', author)
+    console.log('filename: ', filename)
+    console.log('timestamp: ',  timestamp)
+    console.log(datetime)
+    var buffer = "Transaction Type: UPLOAD\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp + "\n" + datetime;
+  
+    //let fullblock = await contract.methods.getUploadByTxNumber(4).call();
+    document.getElementById("show_latest").innerHTML = buffer;
+    //console.log(fullblock);
+    //document.getElementById("show_latest").innerHTML = fullblock;
+  }
+  catch (error){
+    alert('Error: Unable to show latest upload.')
+    console.error(error)
+  }
+}
+
 button_latest_download = async (event) =>{
   console.log('Latest download button pressed...')
   const{ contract } = this.state;
@@ -212,6 +249,7 @@ button_latest_download = async (event) =>{
   try
   {
     let ipfsHash = await contract.methods.getIPFS_down().call();
+    let blockhash = await contract.methods.getTxHash_down().call();
     let filename = await contract.methods.getFileName_down().call();
     let timestamp = await contract.methods.getTimestamp_down().call();
     let txNumber = await contract.methods.getTxNumber_down().call();
@@ -222,10 +260,11 @@ button_latest_download = async (event) =>{
     console.log('----- Download -----')
     console.log('downloader: ', downloader);
     console.log('ipfsHash: ', ipfsHash);
+    console.log('txHash: ', blockhash);
     console.log('filename: ', filename);
     console.log('datetime: ', datetime);
 
-    var buffer = "Transaction Type: DOWNLOAD" +"\nDownloader: " + downloader + "\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nFilename: " + filename + "\n" + datetime;
+    var buffer = "Transaction Type: DOWNLOAD" +"\nDownloader: " + downloader + "\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + blockhash + "\nFilename: " + filename + "\n" + datetime;
     document.getElementById("show_latest").innerHTML = buffer;
   }
   catch (error)
@@ -269,7 +308,15 @@ button_download = async (event) => {
       let time = "" + Date.now();
       contract.methods.download(fileHash, fileName, time, downloader).send({from : accounts[0]}).then((r) => {
         console.log('Download transaction created.')
+        this.getLatestBlockHash().then(function(result){
+        //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.
+        let blockhash = result;
+        console.log("**** update txHash", blockhash);
+        //call ' update' after the creation of the transaction.
+        contract.methods.updateTxHash_download(blockhash).send({from : accounts[0]});
+        //This method requires Gas to be called, but now working.
       })
+    });
     } 
     catch (error)
     {
@@ -364,7 +411,8 @@ button_blockSelect = async (event) =>
               button_blockSelect = {this.button_blockSelect}
               button_latest_block = {this.button_latest_block}
               button_latest_upload = {this.button_latest_upload}
-              button_latest_download = {this.button_latest_download}/>}></Route>
+              button_latest_download = {this.button_latest_download}
+              button_latest_upload_TEST = {this.button_latest_upload_TEST}/>}></Route>
               
         </Routes>
         </div>
@@ -440,6 +488,10 @@ const Verify = (props) => (
          </button>
          <button className="view_download_button" type="button" onClick={props.button_latest_download}> 
          Show Latest Download
+         </button>
+         <br></br>
+         <button className="view_upload_button_test" type="button" onClick={props.button_latest_upload_TEST}> 
+         Upload Test
          </button>
          <br></br>
          <output className="show_latest" id="show_latest"></output>
