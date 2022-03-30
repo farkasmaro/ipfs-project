@@ -207,7 +207,8 @@ button_latest_upload = async (event) => {
 
 button_latest_upload_TEST = async (event) => {
   console.log('Test button pressed')
-  getIPFromAmazon()
+  //getIPFromAmazon()
+  //Failing to return ip
   const{ contract } = this.state;
   try{
 

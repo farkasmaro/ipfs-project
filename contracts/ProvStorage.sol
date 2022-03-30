@@ -61,7 +61,7 @@ function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
     //address_uploads[msg.sender][txNumber] = Upload(_ipfsHash, txHash, _author, _filename, _timestamp);
     uploads[txNumber_upload] = Upload(txNumber_upload, _ipfsHash, "empty" , _author, _filename, _timestamp);  
     //This is new struct mapped with the hash!!!!!! Change this works.
-    uploads_t[temp_txHash] = Upload(txNumber_upload, _ipfsHash, "empty", "this works", _filename, _timestamp);
+    uploads_t[temp_txHash] = Upload(txNumber_upload, _ipfsHash, "empty", "wooohoooo", _filename, _timestamp);
   }
   
   function download(string memory _ipfsHash, string memory _filename, uint _time, string memory _downloader) public {
