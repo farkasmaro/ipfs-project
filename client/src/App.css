@@ -185,6 +185,12 @@ Keep page fit to size
   font-size: 15px;
 }
 
+.show_by_txHash
+{
+  white-space: pre-line;
+  font-size: 15px;
+}
+
 /*Route function pages*/
 .upload
 {

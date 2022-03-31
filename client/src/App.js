@@ -194,45 +194,7 @@ button_latest_upload = async (event) => {
     console.log('filename: ', filename)
     console.log('timestamp: ',  timestamp)
     console.log(datetime)
-    var buffer = "Transaction Type: UPLOAD\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp + "\n" + datetime;
-  
-    //let fullblock = await contract.methods.getUploadByTxNumber(4).call();
-    document.getElementById("show_latest").innerHTML = buffer;
-    //console.log(fullblock);
-    //document.getElementById("show_latest").innerHTML = fullblock;
-  }
-  catch (error){
-    alert('Error: Unable to show latest upload.')
-    console.error(error)
-  }
-}
-
-button_latest_upload_TEST = async (event) => {
-  console.log('Test button pressed')
-  //getIPFromAmazon()
-  //Failing to return ip
-  const{ contract } = this.state;
-  try{
-
-    
-    let txNumber = await contract.methods.getTxNumber_up_latest().call();
-    let ipfsHash = await contract.methods.getIPFS_t().call();
-    let txHash = await contract.methods.getTxHash_t().call();
-    let author = await contract.methods.getAuthor_t().call();
-    let filename = await contract.methods.getFileName_t().call();
-    let timestamp = await contract.methods.getTimestamp_t().call();
-   
-    
-    let datetime = getDateFromUnix(timestamp);
-
-    console.log('txNumber: ', txNumber)
-    console.log('ipfsHash: ', ipfsHash)
-    console.log('txHash: ', txHash)
-    console.log('author: ', author)
-    console.log('filename: ', filename)
-    console.log('timestamp: ',  timestamp)
-    console.log(datetime)
-    var buffer = "Transaction Type: UPLOAD\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\nTimestamp (unix): " + timestamp + "\n" + datetime;
+    var buffer = "Transaction Type: UPLOAD\nUploads count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\n" + datetime;
   
     //let fullblock = await contract.methods.getUploadByTxNumber(4).call();
     document.getElementById("show_latest").innerHTML = buffer;
@@ -251,23 +213,24 @@ button_latest_download = async (event) =>{
 
   try
   {
+    let txNumber = await contract.methods.getTxNumber_down_latest().call();
     let ipfsHash = await contract.methods.getIPFS_down_latest().call();
-    let blockhash = await contract.methods.getTxHash_down_latest().call();
+    let txHash = await contract.methods.getTxHash_down_latest().call();
+    let downloader = await contract.methods.getDownloader_latest().call();
     let filename = await contract.methods.getFileName_down_latest().call();
     let timestamp = await contract.methods.getTimestamp_down_latest().call();
-    let txNumber = await contract.methods.getTxNumber_down_latest().call();
-    let downloader = await contract.methods.getDownloader_latest().call();
+    
     
     let datetime = getDateFromUnix(timestamp);
 
     console.log('----- Download -----')
     console.log('downloader: ', downloader);
     console.log('ipfsHash: ', ipfsHash);
-    console.log('txHash: ', blockhash);
+    console.log('txHash: ', txHash);
     console.log('filename: ', filename);
     console.log('datetime: ', datetime);
 
-    var buffer = "Transaction Type: DOWNLOAD" +"\nDownloader: " + downloader + "\nTransaction count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + blockhash + "\nFilename: " + filename + "\n" + datetime;
+    var buffer = "Transaction Type: DOWNLOAD\nDownloads count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nDownloader: " + downloader + "\nFilename: " + filename + "\n" + datetime;
     document.getElementById("show_latest").innerHTML = buffer;
   }
   catch (error)
@@ -276,6 +239,86 @@ button_latest_download = async (event) =>{
     alert('Error: Unable to show latest download.');
   }
   
+}
+
+button_upload_by_txHash = async (event) => {
+  event.preventDefault();
+  console.log('Test button pressed')
+  //getIPFromAmazon()
+  //Failing to return ip
+  const{ contract } = this.state;
+  try{
+
+    let input_txHash = document.getElementById("upload_txHash").value
+
+    let txNumber = await contract.methods.getTxNumber_up(input_txHash).call();
+    let ipfsHash = await contract.methods.getIPFS_up(input_txHash).call();
+    let txHash = await contract.methods.getTxHash_up(input_txHash).call();
+    let author = await contract.methods.getAuthor_up(input_txHash).call();
+    let filename = await contract.methods.getFileName_up(input_txHash).call();
+    let timestamp = await contract.methods.getTimestamp_up(input_txHash).call();
+   
+    
+    let datetime = getDateFromUnix(timestamp);
+
+    console.log('txNumber: ', txNumber)
+    console.log('ipfsHash: ', ipfsHash)
+    console.log('txHash: ', txHash)
+    console.log('author: ', author)
+    console.log('filename: ', filename)
+    console.log('timestamp: ',  timestamp)
+    console.log(datetime)
+    var buffer = "Transaction Type: UPLOAD\nUploads count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nAuthor: " + author + "\nFilename: " + filename + "\n" + datetime;
+  
+    //let fullblock = await contract.methods.getUploadByTxNumber(4).call();
+    document.getElementById("show_by_txHash").innerHTML = buffer;
+    //console.log(fullblock);
+    //document.getElementById("show_latest").innerHTML = fullblock;
+  }
+  catch (error){
+    alert('Error: Unable to show upload by transaction hash.')
+    console.error(error)
+  }
+}
+
+button_download_by_txHash = async (event) => {
+  event.preventDefault();
+  console.log('Test button pressed')
+  //getIPFromAmazon()
+  //Failing to return ip
+  const{ contract } = this.state;
+  try{
+
+    let input_txHash = document.getElementById("download_txHash").value
+
+    let txNumber = await contract.methods.getTxNumber_down(input_txHash).call();
+    let ipfsHash = await contract.methods.getIPFS_down(input_txHash).call();
+    let txHash = await contract.methods.getTxHash_down(input_txHash).call();
+    let downloader = await contract.methods.getDownloader(input_txHash).call();
+    let filename = await contract.methods.getFileName_down(input_txHash).call();
+    let timestamp = await contract.methods.getTimestamp_down(input_txHash).call();
+   
+    
+    let datetime = getDateFromUnix(timestamp);
+
+    console.log('txNumber: ', txNumber)
+    console.log('ipfsHash: ', ipfsHash)
+    console.log('txHash: ', txHash)
+    console.log('downloader: ', downloader)
+    console.log('filename: ', filename)
+    console.log('timestamp: ',  timestamp)
+    console.log(datetime)
+    var buffer = "Transaction Type: DOWNLOAD\nDownloads count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nDownloader: " + downloader + "\nFilename: " + filename + "\n" + datetime;
+  
+    //let fullblock = await contract.methods.getUploadByTxNumber(4).call();
+    document.getElementById("show_by_txHash").innerHTML = buffer;
+    //console.log(fullblock);
+    //document.getElementById("show_latest").innerHTML = fullblock;
+  }
+  catch (error){
+    alert('Error: Unable to show download by transaction hash.')
+    console.error(error)
+  }
 }
 
 button_download = async (event) => {
@@ -415,7 +458,8 @@ button_blockSelect = async (event) =>
               button_latest_block = {this.button_latest_block}
               button_latest_upload = {this.button_latest_upload}
               button_latest_download = {this.button_latest_download}
-              button_latest_upload_TEST = {this.button_latest_upload_TEST}/>}></Route>
+              button_upload_by_txHash = {this.button_upload_by_txHash}
+              button_download_by_txHash = {this.button_download_by_txHash}/>}></Route>
               
         </Routes>
         </div>
@@ -427,7 +471,6 @@ button_blockSelect = async (event) =>
 
 //Don't think this can work because props go to Main & then go to the individual functions
 // - Removed main instead!
-
 //            <a><NavLink to='/'>Home</NavLink></a>
 
 const Navigation = () => (
@@ -493,11 +536,21 @@ const Verify = (props) => (
          Show Latest Download
          </button>
          <br></br>
-         <button className="view_upload_button_test" type="button" onClick={props.button_latest_upload_TEST}> 
-         Upload Test
-         </button>
-         <br></br>
          <output className="show_latest" id="show_latest"></output>
+         <br></br>
+         <p>Search Uploads - Enter Transaction hash of an upload to view details</p>
+         <form onSubmit={props.button_upload_by_txHash} >
+            <input id="upload_txHash" type='text'/>
+            <input className="submit" type='submit' />
+         </form>
+         <br></br>
+         <p>Search Downloads - Enter Transaction hash of a Download to view details</p>
+         <form onSubmit={props.button_download_by_txHash} >
+            <input id="download_txHash" type='text'/>
+            <input className="submit" type='submit' />
+         </form>
+         <br></br>
+         <output className="show_by_txHash" id="show_by_txHash"></output>
          <br></br>
          
   </div>
