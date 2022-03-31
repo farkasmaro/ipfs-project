@@ -56,17 +56,17 @@ class App extends Component {
         deployedNetwork && deployedNetwork.address,
       );
     
-      //this.runExample();
       // Set web3, accounts, and contract to the state, and then proceed with an
-      this.setState({web3, accounts, contract: instance});  //, this.runExample
+      this.setState({web3, accounts, contract: instance}); 
       
       //console.log('web3: ', this.state.web3)
       console.log('Connected Account: ', this.state.accounts)
       console.log('Contract instance: ', this.state.contract)
 
       const readipfsHash = await this.state.contract.methods.getIPFS_up_latest().call();
-        //readIPFSHash is the promise not the value.
-        //the 'await' returns the value inside the promise if value, and set the state. 
+      //readIPFSHash is the promise not the value.
+      //the 'await' returns the value inside the promise if value, and set the state.
+      //*****latest hash is pulled to display image but this is not necassary*******
 
       this.setState({ipfsHash: readipfsHash});
       console.log('Latest ipfshash: ', readipfsHash)  
@@ -77,17 +77,12 @@ class App extends Component {
       //const transactionDetails = await web3.eth.getTransaction(accounts);
       //console.log('Transaction Details: ', transactionDetails)
 
-      // Display currrent block 
-      //await this.checkCurrentBlock();
-      //----------------------------
-
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(`Failed to load web3, accounts, or contract. Check console for details.`,);
       console.error(error);
     }
   };
-
 
   //Handlers for file capture and submit
   captureFile(event){
@@ -336,7 +331,6 @@ button_download = async (event) => {
     document.body.appendChild(anchor);
     
     const blob = new Blob([filebuffer], {type:'text/plain'});
-    
     anchor.href = URL.createObjectURL( blob );
     //anchor.href = path;
     anchor.download = filename;
