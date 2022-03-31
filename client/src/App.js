@@ -64,7 +64,7 @@ class App extends Component {
       console.log('Connected Account: ', this.state.accounts)
       console.log('Contract instance: ', this.state.contract)
 
-      const readipfsHash = await this.state.contract.methods.getIPFS().call();
+      const readipfsHash = await this.state.contract.methods.getIPFS_up_latest().call();
         //readIPFSHash is the promise not the value.
         //the 'await' returns the value inside the promise if value, and set the state. 
 
@@ -115,6 +115,7 @@ class App extends Component {
   }
   
   getLatestBlockHash = async (event) =>{
+    //-- Function to return the hash of the most recently added transaction block
     let block =  await this.state.web3.eth.getBlock("latest"); 
     let blockhash = block.hash;
     console.log("new blockhash: ", blockhash);
@@ -122,6 +123,8 @@ class App extends Component {
   }
 
   onSubmit(event){
+    //-- Function completes when submit file button is pressed
+
     const { accounts, contract, buffer, ipfsHash, web3 } = this.state;
 
     event.preventDefault()  //Prevent refreshing of page
@@ -156,7 +159,7 @@ class App extends Component {
           let blockhash = result;
           console.log("**** update txHash", blockhash);
           //call ' update' after the creation of the transaction.
-          contract.methods.updateTxHash(blockhash).send({from : accounts[0]});
+          contract.methods.updateTxHash_upload(blockhash).send({from : accounts[0]});
           //This method requires Gas to be called, but now working.
         });
       })
@@ -174,20 +177,19 @@ button_latest_upload = async (event) => {
   try{
 
     
-    let txNumber = await contract.methods.getTxNumber().call();
-    let ipfsHash = await contract.methods.getIPFS().call();
-    console.log('**** getting hash ***');
-    let txHash = await contract.methods.getTxHash().call();
-    console.log('txHash: ', txHash);
-    let author = await contract.methods.getAuthor().call();
-    let filename = await contract.methods.getFileName().call();
-    let timestamp = await contract.methods.getTimestamp().call();
+    let txNumber = await contract.methods.getTxNumber_up_latest().call();
+    let ipfsHash = await contract.methods.getIPFS_up_latest().call();
+    let txHash = await contract.methods.getTxHash_up_latest().call();
+    let author = await contract.methods.getAuthor_up_latest().call();
+    let filename = await contract.methods.getFileName_up_latest().call();
+    let timestamp = await contract.methods.getTimestamp_up_latest().call();
    
     
     let datetime = getDateFromUnix(timestamp);
 
     console.log('txNumber: ', txNumber)
     console.log('ipfsHash: ', ipfsHash)
+    console.log('txHash: ', txHash);
     console.log('author: ', author)
     console.log('filename: ', filename)
     console.log('timestamp: ',  timestamp)
@@ -213,7 +215,7 @@ button_latest_upload_TEST = async (event) => {
   try{
 
     
-    let txNumber = await contract.methods.getTxNumber().call();
+    let txNumber = await contract.methods.getTxNumber_up_latest().call();
     let ipfsHash = await contract.methods.getIPFS_t().call();
     let txHash = await contract.methods.getTxHash_t().call();
     let author = await contract.methods.getAuthor_t().call();
@@ -249,12 +251,12 @@ button_latest_download = async (event) =>{
 
   try
   {
-    let ipfsHash = await contract.methods.getIPFS_down().call();
-    let blockhash = await contract.methods.getTxHash_down().call();
-    let filename = await contract.methods.getFileName_down().call();
-    let timestamp = await contract.methods.getTimestamp_down().call();
-    let txNumber = await contract.methods.getTxNumber_down().call();
-    let downloader = await contract.methods.getDownloader().call();
+    let ipfsHash = await contract.methods.getIPFS_down_latest().call();
+    let blockhash = await contract.methods.getTxHash_down_latest().call();
+    let filename = await contract.methods.getFileName_down_latest().call();
+    let timestamp = await contract.methods.getTimestamp_down_latest().call();
+    let txNumber = await contract.methods.getTxNumber_down_latest().call();
+    let downloader = await contract.methods.getDownloader_latest().call();
     
     let datetime = getDateFromUnix(timestamp);
 
@@ -298,8 +300,8 @@ button_download = async (event) => {
     anchor.click();
     };
 
-    const fileHash = await contract.methods.getIPFS().call();
-    const fileName = await contract.methods.getFileName().call();
+    const fileHash = await contract.methods.getIPFS_up_latest().call();
+    const fileName = await contract.methods.getFileName_up_latest().call();
     let downloader = document.getElementById("downloader").value;
     let link = 'https://ipfs.io/ipfs/'+fileHash;
 

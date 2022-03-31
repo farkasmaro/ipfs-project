@@ -61,37 +61,16 @@ function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
     //address_uploads[msg.sender][txNumber] = Upload(_ipfsHash, txHash, _author, _filename, _timestamp);
     uploads[txNumber_upload] = Upload(txNumber_upload, _ipfsHash, "empty" , _author, _filename, _timestamp);  
     //This is new struct mapped with the hash!!!!!! Change this works.
-    uploads_t[temp_txHash] = Upload(txNumber_upload, _ipfsHash, "empty", "wooohoooo", _filename, _timestamp);
+    uploads_t[temp_txHash] = Upload(txNumber_upload, _ipfsHash, "empty", _author, _filename, _timestamp);
   }
   
   function download(string memory _ipfsHash, string memory _filename, uint _time, string memory _downloader) public {
     txNumber_download = txNumber_download +1;
     downloads[txNumber_download] = Download(txNumber_upload,_ipfsHash, "empty", _filename, _time, _downloader);
   }
-  //----- Conditional Getters ----------
-  // Function can only return one variable in Solidity, 
-  // returning entire transaction as a string instead. 
-  /*
-  function append(string memory a, string memory b, string memory c, string memory d, string memory e, string memory f) internal pure returns (string memory) {
-
-    return string(abi.encodePacked(a, b, c, d, e, f));
-  }
-
-  function getUploadByTxNumber(uint txNum) public view returns (string memory){
-    //storage or memory?
-    string memory a = uint2str(txNum);
-    string memory b = uploads[txNum].ipfsHash;
-    string memory c = bytes32ToString(uploads[txNum].txHash); //need to convert to string
-    string memory d = uploads[txNum].author;
-    string memory e = uploads[txNum].filename;
-    string memory f = uint2str(uploads[txNum].timestamp);  
-    //Solidity does not let you concat strings. 
-    //return "Transaction Type: UPLOAD\nTransaction count: " + a + "\nIPFS Hash: " + b + "\nTrasanction Hash: " + c + "\nAuthor: " + d + "\nFilename: " + e + "\nTimestamp (unix): " + f;
-    return append(a,b,c,d,e,f);
-  }
-  */
+ 
   //function to update txHash with correct value (blockhash) that gets generated after 'upload' is called
-  function updateTxHash(string memory _txHash) public {
+  function updateTxHash_upload(string memory _txHash) public {
     uploads[txNumber_upload].txHash = _txHash;
     //set upload instance to have index as transaction hash
     uploads_t[_txHash] = uploads_t[temp_txHash];
@@ -100,39 +79,34 @@ function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
   }
 
   //---------Upload Get---------
-  function getTxNumber() public view returns (uint){
+  function getTxNumber_up_latest() public view returns (uint){
     //return the latest transaction number
     return txNumber_upload;
   }
 
-  function getIPFS() public view returns (string memory){
+  function getIPFS_up_latest() public view returns (string memory){
     //return the ipfsHash taking transaction ID & msg.sender.
-    //return address_uploads[msg.sender][txNumber].ipfsHash;
     return uploads[txNumber_upload].ipfsHash;
     //return getTxHash();
   }
 
-  function getTxHash() public view returns (string memory){
+  function getTxHash_up_latest() public view returns (string memory){
     //Return transactionHash
-    //return address_uploads[msg.sender][txNumber].txHash;
     return uploads[txNumber_upload].txHash;
   }
 
-  function getAuthor() public view returns (string memory){
+  function getAuthor_up_latest() public view returns (string memory){
     //return author based on txNumber and current account.
-    //return address_uploads[msg.sender][txNumber].author;
     return uploads[txNumber_upload].author;
   }
 
-   function getFileName() public view returns (string memory){
+   function getFileName_up_latest() public view returns (string memory){
     //return author based on txNumber and current account.
-    //return address_uploads[msg.sender][txNumber].filename;
     return uploads[txNumber_upload].filename;
   }
   
-   function getTimestamp() public view returns (uint){
+   function getTimestamp_up_latest() public view returns (uint){
     //return author based on txNumber and current account.
-    //return address_uploads[msg.sender][txNumber].timestamp;
     return uploads[txNumber_upload].timestamp;
   }
   //-------------------------------------------------------------
@@ -167,27 +141,27 @@ function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
     latest_txHash_download = _txHash;
   }
 //----------- Download Get LATEST ------------------
-  function getTxNumber_down() public view returns (uint){
+  function getTxNumber_down_latest() public view returns (uint){
     //return the latest transaction number
     return txNumber_download;
   }
 
-  function getIPFS_down() public view returns (string memory){
+  function getIPFS_down_latest() public view returns (string memory){
     return downloads[txNumber_download].ipfsHash;
   }
 
-   function getTxHash_down() public view returns (string memory){
+   function getTxHash_down_latest() public view returns (string memory){
     return downloads[txNumber_download].txHash;
   }
 
-  function getFileName_down() public view returns (string memory){
+  function getFileName_down_latest() public view returns (string memory){
     return downloads[txNumber_download].filename;
   }
 
-  function getTimestamp_down() public view returns (uint){
+  function getTimestamp_down_latest() public view returns (uint){
     return downloads[txNumber_download].timestamp;
   }
-  function getDownloader() public view returns (string memory){
+  function getDownloader_latest() public view returns (string memory){
     return downloads[txNumber_download].downloader;
   }
 }
