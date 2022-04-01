@@ -32,7 +32,7 @@ function getDateFromUnix(timestamp)
 
 class App extends Component {
 
-  state = {ipfsHash: "empty", storageValue: 0, web3: null, accounts: null, contract: null };
+  state = {ipfsHash: "empty", web3: null, accounts: null, contract: null };
 
   //Specific to react.js - need to bind variables to 'this' instance
   captureFile = this.captureFile.bind(this);
@@ -64,8 +64,7 @@ class App extends Component {
       console.log('Contract instance: ', this.state.contract)
 
       const readipfsHash = await this.state.contract.methods.getIPFS_up_latest().call();
-      //readIPFSHash is the promise not the value.
-      //the 'await' returns the value inside the promise if value, and set the state.
+     
       //*****latest hash is pulled to display image but this is not necassary*******
 
       this.setState({ipfsHash: readipfsHash});
@@ -167,7 +166,7 @@ class App extends Component {
 
 button_latest_upload = async (event) => {
   console.log('Latest upload button pressed...')
-  getIPFromAmazon()
+  //getIPFromAmazon()
   const{ contract } = this.state;
   try{
 
