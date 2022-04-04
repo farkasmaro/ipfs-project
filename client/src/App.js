@@ -91,6 +91,7 @@ class App extends Component {
       //console.log('capture file...')
       event.preventDefault()
       const file = event.target.files[0]
+      //reading the submitted files [0] as 'file' - limit to one file only?
       const reader = new window.FileReader()
       reader.readAsArrayBuffer(file) //this is the conversion to buffer
       //take result array and we want to set this to compnent state
@@ -147,18 +148,17 @@ class App extends Component {
 
       //contract.methods.set(result[0].hash).send({from : accounts[0]}).then((r) => {
       contract.methods.upload(result[0].hash, author, filename, time).send({from : accounts[0]}).then((r) => {
-        //neet to call after .then() to get current blockhash.
+        //Need to call after .then() to get the hash of the completed transaction.
         this.getLatestBlockHash().then(function(result){
-          //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.
+          //Need to access the promise 'result' using .then()
           let blockhash = result;
-          console.log("**** update txHash", blockhash);
           //call ' update' after the creation of the transaction.
           contract.methods.updateTxHash_upload(blockhash).send({from : accounts[0]});
-          //This method requires Gas to be called, but now working.
+          //This method requires also requires gas.
         });
       })
       console.log('new ipfsHash: ', result[0].hash)
-      this.setState({ipfsHash: result[0].hash})
+      this.setState({ipfsHash: result[0].hash})   //set the state to latest ipfs hash, which 
       let url = "url: www.ipfs.io/ipfs/" + ipfsHash;
       document.getElementById("ipfsURL").innerHTML = url;
     })
@@ -315,31 +315,33 @@ button_download_by_txHash = async (event) => {
   }
 }
 
+
 button_download = async (event) => {
     const {contract, accounts } = this.state;
     //Bit clunky, but download retrieves the file buffer from IPFS.
     //Buffer is converted to utf8 string and saved to plain text file
     //Filename resets the text file format.
 
-    const download = (filename, filebuffer) => {
-    //https://attacomsian.com/blog/javascript-download-file
-    // Create a new link
-    const anchor = document.createElement('a');
-    anchor.style.display = 'none';
-    // Append to the DOM
-    document.body.appendChild(anchor);
-    
-    const blob = new Blob([filebuffer], {type:'text/plain'});
-    anchor.href = URL.createObjectURL( blob );
-    //anchor.href = path;
-    anchor.download = filename;
-    anchor.click();
-    };
-
     const fileHash = await contract.methods.getIPFS_up_latest().call();
     const fileName = await contract.methods.getFileName_up_latest().call();
     let downloader = document.getElementById("downloader").value;
     let link = 'https://ipfs.io/ipfs/'+fileHash;
+
+    //Function to download a file, taking the array buffer contents, and filename.
+    const download = (filename, filebuffer) => {
+      //https://attacomsian.com/blog/javascript-download-file
+      // Create a new link
+      const anchor = document.createElement('a');
+      anchor.style.display = 'none';
+      // Append to the DOM
+      document.body.appendChild(anchor);
+    
+      const blob = new Blob([filebuffer], {type:'text/plain'});
+      anchor.href = URL.createObjectURL( blob );
+      //anchor.href = path;
+      anchor.download = filename;
+      anchor.click();
+    };
 
     //First Create a transaction for the download
     try
@@ -363,23 +365,22 @@ button_download = async (event) => {
       alert('Error: Unable to create transaction.');
     }
     //-- Then initiate download
-    //https://stackoverflow.com/questions/48035864/how-download-file-via-ipfs-using-nodejs
-    try
-    {
-      ipfs.files.get(fileHash, function (err,files) {
+    //https://stackoverflow.com/questions/48035864/how-download-file-via-ipfs-using-nodejs  ?????
+    ipfs.files.get(fileHash, function (err,files) {
+      if(err){
+        alert('Error: File not retrievable. ')
+        console.error(err)
+        return
+      }
+      else {
         files.forEach((file) => {
-          console.log("File Path >> ", link)
-          console.log("File Content >> ",file.content.toString('utf8'))  //.toString('utf8')
+          console.log("File Path: ", link)
+          console.log("File Content: ",file.content.toString('utf8'))  //.toString('utf8')
           download(fileName, file.content);
           //download(link, fileName);
         })
-      })
-    }
-    catch(error)
-    {
-      console.error(error);
-      alert('Error: No file found.');
-    }
+      }
+    })
 }
 
 button_latest_block = async (event) => {
@@ -452,8 +453,7 @@ button_blockSelect = async (event) =>
               button_latest_upload = {this.button_latest_upload}
               button_latest_download = {this.button_latest_download}
               button_upload_by_txHash = {this.button_upload_by_txHash}
-              button_download_by_txHash = {this.button_download_by_txHash}/>}></Route>
-              
+              button_download_by_txHash = {this.button_download_by_txHash}/>}></Route>   
         </Routes>
         </div>
         <Footer />
@@ -462,10 +462,7 @@ button_blockSelect = async (event) =>
   }
 }
 
-//Don't think this can work because props go to Main & then go to the individual functions
-// - Removed main instead!
-//            <a><NavLink to='/'>Home</NavLink></a>
-
+// Render functions need to be called outside of the class component. 
 const Navigation = () => (
   <nav className= "navbar">
       <b href="#" className= "heading"> IPFS File Upload</b>    
@@ -554,6 +551,12 @@ const Footer = () => (
     Farkas Maro | farkasmaro@gmail.com | UWE: Digital Systems Project 
   </div>
 );
+
+//Don't think this can work because props go to Main & then go to the individual functions
+// - Removed main instead!
+//            <a><NavLink to='/'>Home</NavLink></a>
+
+
 
 export default App;
 

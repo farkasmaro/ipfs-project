@@ -2,17 +2,16 @@
 pragma solidity >=0.5.16 <8.10.0;
 
 contract ProvStorage {
-//Global variables storing latest transaction count.
+//State Variables
   uint txNumber_upload = 0;
   uint txNumber_download = 0;
   string latest_txHash_upload = "";
   string latest_txHash_download = "";
-
   string temp_txHash = "origin";
 
 // Upload structure
 struct Upload {
-  //struct for each upload instance
+  //Properties of each upload instance
   uint txNumber;
   string ipfsHash;
   string txHash;
@@ -28,7 +27,6 @@ struct Download {
   string downloader;
   string filename;
   uint timestamp;
-  
   //string ip;  need to pull from dapp
 }
 
@@ -44,13 +42,13 @@ mapping(string => Download) public downloads;
 //--- Upload - Download ---
 
   function upload(string memory _ipfsHash, string memory _author, string memory _filename, uint _timestamp) public {
-    //associate an upload with address and create the instance
+    // Function to set the properties of an upload instance.
     txNumber_upload = txNumber_upload +1;
-    //This is new struct mapped with the hash
     uploads[temp_txHash] = Upload(txNumber_upload, _ipfsHash, "empty", _author, _filename, _timestamp);
   }
   
   function download(string memory _ipfsHash, string memory _filename, uint _time, string memory _downloader) public {
+    // Function to set the properties of a download instance.
     txNumber_download = txNumber_download +1;
     downloads[temp_txHash] = Download(txNumber_download, _ipfsHash, "empty", _downloader, _filename, _time);
   }
@@ -136,9 +134,8 @@ mapping(string => Download) public downloads;
     return uploads[txHash].txNumber;
   }
   function getIPFS_up(string memory txHash) public view returns (string memory){
-    //return the ipfsHash taking transaction ID & msg.sender.
+    //Return IPFS Hash of an upload of index 'tXHash'
     return uploads[txHash].ipfsHash;
-    //return getTxHash();
   }
 
   function getTxHash_up(string memory txHash) public view returns (string memory){
