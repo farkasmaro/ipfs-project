@@ -9,6 +9,10 @@ import getWeb3 from "./getWeb3";
 import ipfs from './ipfs'  //importing node connectino settings from ./ipfs.js
 import "./App.css"
 
+//Arrays to hold all transaction hashes - needs to be globally accessible
+var upload_hashes = []
+var download_hashes = []
+
 //Attempting to retrieve IP from amazon AWS checkIP but currently fails to return a value. 
 //https://ipdata.co/blog/how-to-get-the-ip-address-in-javascript/
 function getIPFromAmazon() {
@@ -30,9 +34,25 @@ function getDateFromUnix(timestamp)
   return datetime ;
 }
 
+//Function to download a file, taking the array buffer contents, and filename.
+const download = (filename, filebuffer) => {
+  //https://attacomsian.com/blog/javascript-download-file
+  // Create a new link
+  const anchor = document.createElement('a');
+  anchor.style.display = 'none';
+  // Append to the DOM
+  document.body.appendChild(anchor);
+
+  const blob = new Blob([filebuffer], {type:'text/plain'});
+  anchor.href = URL.createObjectURL( blob );
+  //anchor.href = path;
+  anchor.download = filename;
+  anchor.click();
+};
+
 class App extends Component {
 
-  state = {ipfsHash: "empty", web3: null, accounts: null, contract: null };
+  state = {ipfsHash: "empty", web3: null, accounts: null, contract: null};
 
   //Specific to react.js - need to bind variables to 'this' instance
   captureFile = this.captureFile.bind(this);
@@ -120,7 +140,7 @@ class App extends Component {
   onSubmit(event){
     //-- Function completes when submit file button is pressed
 
-    const { accounts, contract, buffer, ipfsHash, web3 } = this.state;
+    const { accounts, contract, buffer, ipfsHash} = this.state;
 
     event.preventDefault()  //Prevent refreshing of page
     console.log('On submit...')
@@ -132,11 +152,8 @@ class App extends Component {
         console.error(error)  //error handling
         return
       }
-    
       //--   Update blockchain   --
       // test sending more details to contract:
-      //- function upload(string memory _ipfsHash, string memory _author, uint _timestamp) public {
-      
       let author = document.getElementById("author").value; //get author from text box
       let time = new Date();
       time = time.getTime();  //unix timestamp
@@ -155,7 +172,13 @@ class App extends Component {
           //call ' update' after the creation of the transaction.
           contract.methods.updateTxHash_upload(blockhash).send({from : accounts[0]});
           //This method requires also requires gas.
-        });
+          blockhash = blockhash.concat('\n') //Add new line to display neater
+          //Update global array holding all uploads hashes, within upload method so blockhash is reachable.
+          upload_hashes = upload_hashes.concat([blockhash])
+          console.log(upload_hashes)
+          document.getElementById("list_uploads").innerHTML = (upload_hashes); 
+          //^Updates output straight away but not compulsory bc also in HTML
+        })
       })
       console.log('new ipfsHash: ', result[0].hash)
       this.setState({ipfsHash: result[0].hash})   //set the state to latest ipfs hash, which 
@@ -164,20 +187,17 @@ class App extends Component {
     })
   }
 
-button_latest_upload = async (event) => {
+button_show_latest_upload = async (event) => {
   console.log('Latest upload button pressed...')
   //getIPFromAmazon()
   const{ contract } = this.state;
   try{
-
-    
     let txNumber = await contract.methods.getTxNumber_up_latest().call();
     let ipfsHash = await contract.methods.getIPFS_up_latest().call();
     let txHash = await contract.methods.getTxHash_up_latest().call();
     let author = await contract.methods.getAuthor_up_latest().call();
     let filename = await contract.methods.getFileName_up_latest().call();
     let timestamp = await contract.methods.getTimestamp_up_latest().call();
-   
     
     let datetime = getDateFromUnix(timestamp);
 
@@ -201,10 +221,9 @@ button_latest_upload = async (event) => {
   }
 }
 
-button_latest_download = async (event) =>{
+button_show_latest_download = async (event) =>{
   console.log('Latest download button pressed...')
   const{ contract } = this.state;
-
   try
   {
     let txNumber = await contract.methods.getTxNumber_down_latest().call();
@@ -213,7 +232,6 @@ button_latest_download = async (event) =>{
     let downloader = await contract.methods.getDownloader_latest().call();
     let filename = await contract.methods.getFileName_down_latest().call();
     let timestamp = await contract.methods.getTimestamp_down_latest().call();
-    
     
     let datetime = getDateFromUnix(timestamp);
 
@@ -232,10 +250,9 @@ button_latest_download = async (event) =>{
     console.error(error);
     alert('Error: Unable to show latest download.');
   }
-  
 }
 
-button_upload_by_txHash = async (event) => {
+button_show_upload_by_txHash = async (event) => {
   event.preventDefault();
   console.log('Test button pressed')
   //getIPFromAmazon()
@@ -252,7 +269,6 @@ button_upload_by_txHash = async (event) => {
     let filename = await contract.methods.getFileName_up(input_txHash).call();
     let timestamp = await contract.methods.getTimestamp_up(input_txHash).call();
    
-    
     let datetime = getDateFromUnix(timestamp);
 
     console.log('txNumber: ', txNumber)
@@ -275,7 +291,7 @@ button_upload_by_txHash = async (event) => {
   }
 }
 
-button_download_by_txHash = async (event) => {
+button_show_download_by_txHash = async (event) => {
   event.preventDefault();
   console.log('Test button pressed')
   //getIPFromAmazon()
@@ -283,7 +299,7 @@ button_download_by_txHash = async (event) => {
   const{ contract } = this.state;
   try{
 
-    let input_txHash = document.getElementById("download_txHash").value
+    let input_txHash = document.getElementById("show_download_txHash").value
 
     let txNumber = await contract.methods.getTxNumber_down(input_txHash).call();
     let ipfsHash = await contract.methods.getIPFS_down(input_txHash).call();
@@ -315,8 +331,7 @@ button_download_by_txHash = async (event) => {
   }
 }
 
-
-button_download = async (event) => {
+button_download_latest = async (event) => {
     const {contract, accounts } = this.state;
     //Bit clunky, but download retrieves the file buffer from IPFS.
     //Buffer is converted to utf8 string and saved to plain text file
@@ -327,22 +342,6 @@ button_download = async (event) => {
     let downloader = document.getElementById("downloader").value;
     let link = 'https://ipfs.io/ipfs/'+fileHash;
 
-    //Function to download a file, taking the array buffer contents, and filename.
-    const download = (filename, filebuffer) => {
-      //https://attacomsian.com/blog/javascript-download-file
-      // Create a new link
-      const anchor = document.createElement('a');
-      anchor.style.display = 'none';
-      // Append to the DOM
-      document.body.appendChild(anchor);
-    
-      const blob = new Blob([filebuffer], {type:'text/plain'});
-      anchor.href = URL.createObjectURL( blob );
-      //anchor.href = path;
-      anchor.download = filename;
-      anchor.click();
-    };
-
     //First Create a transaction for the download
     try
     {
@@ -352,10 +351,14 @@ button_download = async (event) => {
         this.getLatestBlockHash().then(function(result){
         //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.
         let blockhash = result;
-        console.log("**** update txHash", blockhash);
+        //console.log("**** update txHash", blockhash);
         //call ' update' after the creation of the transaction.
         contract.methods.updateTxHash_download(blockhash).send({from : accounts[0]});
         //This method requires Gas to be called, but now working.
+        blockhash = blockhash.concat('\n') //Add new line to display neater
+        download_hashes = download_hashes.concat([blockhash])
+        console.log(download_hashes)
+        document.getElementById("list_downloads").innerHTML = (download_hashes);
       })
     });
     } 
@@ -383,7 +386,62 @@ button_download = async (event) => {
     })
 }
 
-button_latest_block = async (event) => {
+button_download_latest_by_txHash = async (event) => {
+  event.preventDefault();
+  const {contract, accounts } = this.state;
+ 
+  let txHash = document.getElementById("download_txHash").value;
+  const fileHash = await contract.methods.getIPFS_up(txHash).call();
+  const fileName = await contract.methods.getFileName_up(txHash).call();
+  let downloader = document.getElementById("downloader").value;
+  let link = 'https://ipfs.io/ipfs/'+fileHash;
+
+  //First Create a transaction for the download
+  try
+  {
+    let time = "" + Date.now();
+    contract.methods.download(fileHash, fileName, time, downloader).send({from : accounts[0]}).then((r) => {
+      console.log('Download transaction created.')
+      this.getLatestBlockHash().then(function(result){
+      //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.
+      let blockhash = result;
+      //console.log("**** update txHash", blockhash);
+      //call ' update' after the creation of the transaction.
+      contract.methods.updateTxHash_download(blockhash).send({from : accounts[0]});
+      //This method requires Gas to be called, but now working.
+      //Update global array holding download Tx hashes
+      blockhash = blockhash.concat('\n') //Add new line to display neater
+      download_hashes = download_hashes.concat([blockhash])
+      console.log(download_hashes)
+      //document.getElementById("list_downloads").innerHTML = (download_hashes);
+    })
+  });
+  } 
+  catch (error)
+  {
+    console.error(error);
+    alert('Error: Unable to create transaction.');
+  }
+  //-- Then initiate download
+  //https://stackoverflow.com/questions/48035864/how-download-file-via-ipfs-using-nodejs  ?????
+  ipfs.files.get(fileHash, function (err,files) {
+    if(err){
+      alert('Error: File not retrievable. ')
+      console.error(err)
+      return
+    }
+    else {
+      files.forEach((file) => {
+        console.log("File Path: ", link)
+        console.log("File Content: ",file.content.toString('utf8'))  //.toString('utf8')
+        download(fileName, file.content);
+        //download(link, fileName);
+      })
+    }
+  })
+}
+
+button_show_latest_block = async (event) => {
   event.preventDefault();
   //needs to be asynchronous to read the latest transaction from block. 
   console.log('Latest block button pressed..');
@@ -446,14 +504,15 @@ button_blockSelect = async (event) =>
               captureFile = {this.captureFile}/>}></Route>
           <Route path='/download' element={<Download
               //passing state functions
-              button_download = {this.button_download}/>}></Route>
+              button_download_latest = {this.button_download_latest}
+              button_download_latest_by_txHash ={this.button_download_latest_by_txHash}/>}></Route>
           <Route path='/verify' element={<Verify
               button_blockSelect = {this.button_blockSelect}
-              button_latest_block = {this.button_latest_block}
-              button_latest_upload = {this.button_latest_upload}
-              button_latest_download = {this.button_latest_download}
-              button_upload_by_txHash = {this.button_upload_by_txHash}
-              button_download_by_txHash = {this.button_download_by_txHash}/>}></Route>   
+              button_show_latest_block = {this.button_show_latest_block}
+              button_show_latest_upload = {this.button_show_latest_upload}
+              button_show_latest_download = {this.button_show_latest_download}
+              button_show_upload_by_txHash = {this.button_show_upload_by_txHash}
+              button_show_download_by_txHash = {this.button_show_download_by_txHash}/>}></Route>   
         </Routes>
         </div>
         <Footer />
@@ -485,10 +544,14 @@ const Upload = (props) => (
             <br></br>
             <input className="captureFile" id="captureFile" type='file' onChange={props.captureFile}/>
             <input className="submit" type='submit' />
-            <br></br>
-            <output id="ipfsURL"></output>
-            <br></br>
-         </form>
+            </form>
+          <br></br>
+          <output id="ipfsURL"></output>
+          <br></br>
+          <hr></hr>
+          <p>All Uploads by Transaction Hash:</p>
+          <br></br>
+          <output className="list_uploads" id="list_uploads">{upload_hashes}</output> 
   </div>
 );
 
@@ -498,9 +561,20 @@ const Download = (props) => (
         <label htmlFor="downloader"> Insert Name:  </label>
             <input className="downloader" id="downloader" type='text'/>
             <br></br>
-         <button className="download_button" type="button" onClick={props.button_download}> 
+            <hr></hr>
+         <p>Download most recently added file:</p>
+         <button className="download_button" type="button" onClick={props.button_download_latest}> 
          Download Latest File
          </button>
+      <hr></hr>
+      <p>Download file by Transaction Hash:</p>
+      <form onSubmit={props.button_download_latest_by_txHash} >
+            <input id="download_txHash" type='text'/>
+            <input className="submit" type='submit' />
+         </form>
+      <hr></hr>
+      <p>All Downloads by Transaction Hash: </p>
+      <output className="list_downloads" id="list_downloads">{download_hashes}</output> 
   </div>
 );
 
@@ -512,31 +586,34 @@ const Verify = (props) => (
             <input id="blockNum" type='text'/>
             <input className="submit" type='submit' />
          </form>
-         <button className="blockbutton" type="button" onClick={props.button_latest_block}> 
+         <button className="blockbutton" type="button" onClick={props.button_show_latest_block}> 
          Show Latest Block
          </button>
          <br></br>
          <output className="show_block" id="show_block"></output>
          <br></br>
+         <hr></hr>
          <p>Search elements on smart contract. </p>
-         <button className="view_upload_button" type="button" onClick={props.button_latest_upload}> 
+         <button className="view_upload_button" type="button" onClick={props.button_show_latest_upload}> 
          Show Latest Upload
          </button>
-         <button className="view_download_button" type="button" onClick={props.button_latest_download}> 
+         <button className="view_download_button" type="button" onClick={props.button_show_latest_download}> 
          Show Latest Download
          </button>
          <br></br>
          <output className="show_latest" id="show_latest"></output>
          <br></br>
+         <hr></hr>
          <p>Search Uploads - Enter Transaction hash of an upload to view details</p>
-         <form onSubmit={props.button_upload_by_txHash} >
+         <form onSubmit={props.button_show_upload_by_txHash} >
             <input id="upload_txHash" type='text'/>
             <input className="submit" type='submit' />
          </form>
          <br></br>
-         <p>Search Downloads - Enter Transaction hash of a Download to view details</p>
-         <form onSubmit={props.button_download_by_txHash} >
-            <input id="download_txHash" type='text'/>
+         <hr></hr>
+         <p>Search Downloads - Enter Transaction hash of a download to view details</p>
+         <form onSubmit={props.button_show_download_by_txHash} >
+            <input id="show_download_txHash" type='text'/>
             <input className="submit" type='submit' />
          </form>
          <br></br>
@@ -552,14 +629,7 @@ const Footer = () => (
   </div>
 );
 
-//Don't think this can work because props go to Main & then go to the individual functions
-// - Removed main instead!
-//            <a><NavLink to='/'>Home</NavLink></a>
-
-
-
 export default App;
-
 
 //npm run start
 //need to run in client directory

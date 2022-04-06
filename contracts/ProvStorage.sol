@@ -185,3 +185,4 @@ mapping(string => Download) public downloads;
   }
 }
 //msg.sender = the address of the acccount currently running contract.
+
