@@ -8,6 +8,7 @@ import getWeb3 from "./getWeb3";
 //Can fetch read/write data from smart contracts. 
 import ipfs from './ipfs'  //importing node connectino settings from ./ipfs.js
 import "./App.css"
+import axios from 'axios' //To get IP
 
 //Arrays to hold all transaction hashes - needs to be globally accessible
 var upload_hashes = []
@@ -19,6 +20,11 @@ function getIPFromAmazon() {
   fetch("https://checkip.amazonaws.com/", {mode: 'no-cors'}).then(res => res.text()).then(data => console.log('IP Address: ',data))
 // 'no-cors' mode does not return anything
 // See this for resolution:  https://stackoverflow.com/questions/43262121/trying-to-use-fetch-and-pass-in-mode-no-cors
+}
+const getIP = async () => {
+  const result = await axios.get('https://geolocation-db.com/json/')
+  console.log(result.data);
+  return(result.data.IPv4)
 }
 
 function getDateFromUnix(timestamp)
@@ -232,17 +238,19 @@ button_show_latest_download = async (event) =>{
     let downloader = await contract.methods.getDownloader_latest().call();
     let filename = await contract.methods.getFileName_down_latest().call();
     let timestamp = await contract.methods.getTimestamp_down_latest().call();
-    
+    let IP = await contract.methods.getIP_down_latest().call();
+
     let datetime = getDateFromUnix(timestamp);
 
-    console.log('----- Download -----')
+    console.log('----- Download -----');
     console.log('downloader: ', downloader);
     console.log('ipfsHash: ', ipfsHash);
     console.log('txHash: ', txHash);
     console.log('filename: ', filename);
     console.log('datetime: ', datetime);
+    console.log('IP :', IP);
 
-    var buffer = "Transaction Type: DOWNLOAD\nDownloads count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nDownloader: " + downloader + "\nFilename: " + filename + "\n" + datetime;
+    var buffer = "Transaction Type: DOWNLOAD\nDownloads count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nDownloader: " + downloader + "\nFilename: " + filename + "\n" + datetime + "\nIP: " + IP;
     document.getElementById("show_latest").innerHTML = buffer;
   }
   catch (error)
@@ -307,7 +315,7 @@ button_show_download_by_txHash = async (event) => {
     let downloader = await contract.methods.getDownloader(input_txHash).call();
     let filename = await contract.methods.getFileName_down(input_txHash).call();
     let timestamp = await contract.methods.getTimestamp_down(input_txHash).call();
-   
+    let IP = await contract.methods.getIP_down(input_txHash).call();
     
     let datetime = getDateFromUnix(timestamp);
 
@@ -317,8 +325,9 @@ button_show_download_by_txHash = async (event) => {
     console.log('downloader: ', downloader)
     console.log('filename: ', filename)
     console.log('timestamp: ',  timestamp)
+    console.log('IP: ', IP)
     console.log(datetime)
-    var buffer = "Transaction Type: DOWNLOAD\nDownloads count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nDownloader: " + downloader + "\nFilename: " + filename + "\n" + datetime;
+    var buffer = "Transaction Type: DOWNLOAD\nDownloads count: " + txNumber + "\nIPFS Hash: " + ipfsHash + "\nTransaction Hash: " + txHash + "\nDownloader: " + downloader + "\nFilename: " + filename + "\n" + datetime + "\nIP: " + IP;
   
     //let fullblock = await contract.methods.getUploadByTxNumber(4).call();
     document.getElementById("show_by_txHash").innerHTML = buffer;
@@ -336,6 +345,8 @@ button_download_latest = async (event) => {
     //Bit clunky, but download retrieves the file buffer from IPFS.
     //Buffer is converted to utf8 string and saved to plain text file
     //Filename resets the text file format.
+    let IP = await getIP()
+    console.log('IP: ', IP)
 
     const fileHash = await contract.methods.getIPFS_up_latest().call();
     const fileName = await contract.methods.getFileName_up_latest().call();
@@ -346,7 +357,7 @@ button_download_latest = async (event) => {
     try
     {
       let time = "" + Date.now();
-      contract.methods.download(fileHash, fileName, time, downloader).send({from : accounts[0]}).then((r) => {
+      contract.methods.download(fileHash, fileName, time, downloader, IP).send({from : accounts[0]}).then((r) => {
         console.log('Download transaction created.')
         this.getLatestBlockHash().then(function(result){
         //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.
@@ -389,6 +400,8 @@ button_download_latest = async (event) => {
 button_download_latest_by_txHash = async (event) => {
   event.preventDefault();
   const {contract, accounts } = this.state;
+  let IP = await getIP()
+  console.log('IP: ', IP)
  
   let txHash = document.getElementById("download_txHash").value;
   const fileHash = await contract.methods.getIPFS_up(txHash).call();
@@ -400,7 +413,7 @@ button_download_latest_by_txHash = async (event) => {
   try
   {
     let time = "" + Date.now();
-    contract.methods.download(fileHash, fileName, time, downloader).send({from : accounts[0]}).then((r) => {
+    contract.methods.download(fileHash, fileName, time, downloader, IP).send({from : accounts[0]}).then((r) => {
       console.log('Download transaction created.')
       this.getLatestBlockHash().then(function(result){
       //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.

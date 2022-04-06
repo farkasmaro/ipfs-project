@@ -27,6 +27,7 @@ struct Download {
   string downloader;
   string filename;
   uint timestamp;
+  string IP;
   //string ip;  need to pull from dapp
 }
 
@@ -47,10 +48,10 @@ mapping(string => Download) public downloads;
     uploads[temp_txHash] = Upload(txNumber_upload, _ipfsHash, "empty", _author, _filename, _timestamp);
   }
   
-  function download(string memory _ipfsHash, string memory _filename, uint _time, string memory _downloader) public {
+  function download(string memory _ipfsHash, string memory _filename, uint _time, string memory _downloader, string memory _IP) public {
     // Function to set the properties of a download instance.
     txNumber_download = txNumber_download +1;
-    downloads[temp_txHash] = Download(txNumber_download, _ipfsHash, "empty", _downloader, _filename, _time);
+    downloads[temp_txHash] = Download(txNumber_download, _ipfsHash, "empty", _downloader, _filename, _time, _IP);
   }
  
   //function to update txHash with correct value (blockhash) that gets generated after 'upload' is called
@@ -127,6 +128,11 @@ mapping(string => Download) public downloads;
     return downloads[latest_txHash_download].downloader;
   }
 
+  function getIP_down_latest() public view returns (string memory)
+  {
+    return downloads[latest_txHash_download].IP;
+  }
+
 
   //---------Get upload properties based on txHash ---------
   function getTxNumber_up(string memory txHash) public view returns (uint){
@@ -182,6 +188,10 @@ mapping(string => Download) public downloads;
   }
   function getDownloader(string memory txHash) public view returns (string memory){
     return downloads[txHash].downloader;
+  }
+  function getIP_down(string memory txHash) public view returns (string memory)
+  {
+    return downloads[txHash].IP;
   }
 }
 //msg.sender = the address of the acccount currently running contract.
