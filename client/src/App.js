@@ -14,14 +14,9 @@ import axios from 'axios' //To get IP
 var upload_hashes = []
 var download_hashes = []
 
-//Attempting to retrieve IP from amazon AWS checkIP but currently fails to return a value. 
-//https://ipdata.co/blog/how-to-get-the-ip-address-in-javascript/
-function getIPFromAmazon() {
-  fetch("https://checkip.amazonaws.com/", {mode: 'no-cors'}).then(res => res.text()).then(data => console.log('IP Address: ',data))
-// 'no-cors' mode does not return anything
-// See this for resolution:  https://stackoverflow.com/questions/43262121/trying-to-use-fetch-and-pass-in-mode-no-cors
-}
+//attempting to pull IP address to add to download block
 const getIP = async () => {
+  //https://medium.com/how-to-react/how-to-get-user-ip-address-in-react-js-73eb295720d0
   const result = await axios.get('https://geolocation-db.com/json/')
   console.log(result.data);
   return(result.data.IPv4)
@@ -135,6 +130,7 @@ class App extends Component {
     }
   }
   
+
   getLatestBlockHash = async (event) =>{
     //-- Function to return the hash of the most recently added transaction block
     let block =  await this.state.web3.eth.getBlock("latest"); 
@@ -161,36 +157,40 @@ class App extends Component {
       //--   Update blockchain   --
       // test sending more details to contract:
       let author = document.getElementById("author").value; //get author from text box
-      let time = new Date();
-      time = time.getTime();  //unix timestamp
-      let filename = document.getElementById("captureFile").value;
-      filename = filename.split("\\").pop();
-      console.log('Author: ', author);
-      console.log('Time: ', time);
-      console.log('Filename: ', filename);
+      if (author == ''){
+        alert('Error: Please insert name.')
+      }
+      else{
+        let time = new Date();
+        time = time.getTime();  //unix timestamp
+        let filename = document.getElementById("captureFile").value;
+        filename = filename.split("\\").pop();
+        console.log('Author: ', author);
+        console.log('Time: ', time);
+        console.log('Filename: ', filename);
 
-      //contract.methods.set(result[0].hash).send({from : accounts[0]}).then((r) => {
-      contract.methods.upload(result[0].hash, author, filename, time).send({from : accounts[0]}).then((r) => {
-        //Need to call after .then() to get the hash of the completed transaction.
-        this.getLatestBlockHash().then(function(result){
-          //Need to access the promise 'result' using .then()
-          let blockhash = result;
-          //call ' update' after the creation of the transaction.
-          contract.methods.updateTxHash_upload(blockhash).send({from : accounts[0]});
-          //This method requires also requires gas.
-          blockhash = blockhash.concat('\n') //Add new line to display neater
-          //Update global array holding all uploads hashes, within upload method so blockhash is reachable.
-          upload_hashes = upload_hashes.concat([blockhash])
-          console.log(upload_hashes)
-          document.getElementById("list_uploads").innerHTML = (upload_hashes); 
-          //^Updates output straight away but not compulsory bc also in HTML
+        contract.methods.upload(result[0].hash, author, filename, time).send({from : accounts[0]}).then((r) => {
+          //Need to call after .then() to get the hash of the completed transaction.
+          this.getLatestBlockHash().then(function(result){
+            //Need to access the promise 'result' using .then()
+            let blockhash = result;
+            //call ' update' after the creation of the transaction.
+            contract.methods.updateTxHash_upload(blockhash).send({from : accounts[0]});
+            //This method requires also requires gas.
+            blockhash = blockhash.concat('\n') //Add new line to display neater
+            //Update global array holding all uploads hashes, within upload method so blockhash is reachable.
+            upload_hashes = upload_hashes.concat([blockhash])
+            console.log(upload_hashes)
+            document.getElementById("list_uploads").innerHTML = (upload_hashes); 
+            //^Updates output straight away but not compulsory bc also in HTML
+          })
         })
+        console.log('new ipfsHash: ', result[0].hash)
+        this.setState({ipfsHash: result[0].hash})   //set the state to latest ipfs hash, which 
+        let url = "url: www.ipfs.io/ipfs/" + ipfsHash;
+        document.getElementById("ipfsURL").innerHTML = url;
+        }
       })
-      console.log('new ipfsHash: ', result[0].hash)
-      this.setState({ipfsHash: result[0].hash})   //set the state to latest ipfs hash, which 
-      let url = "url: www.ipfs.io/ipfs/" + ipfsHash;
-      document.getElementById("ipfsURL").innerHTML = url;
-    })
   }
 
 button_show_latest_upload = async (event) => {
@@ -350,51 +350,56 @@ button_download_latest = async (event) => {
 
     const fileHash = await contract.methods.getIPFS_up_latest().call();
     const fileName = await contract.methods.getFileName_up_latest().call();
-    let downloader = document.getElementById("downloader").value;
     let link = 'https://ipfs.io/ipfs/'+fileHash;
+    let downloader = document.getElementById("downloader").value;
 
-    //First Create a transaction for the download
-    try
-    {
-      let time = "" + Date.now();
-      contract.methods.download(fileHash, fileName, time, downloader, IP).send({from : accounts[0]}).then((r) => {
-        console.log('Download transaction created.')
-        this.getLatestBlockHash().then(function(result){
-        //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.
-        let blockhash = result;
-        //console.log("**** update txHash", blockhash);
-        //call ' update' after the creation of the transaction.
-        contract.methods.updateTxHash_download(blockhash).send({from : accounts[0]});
-        //This method requires Gas to be called, but now working.
-        blockhash = blockhash.concat('\n') //Add new line to display neater
-        download_hashes = download_hashes.concat([blockhash])
-        console.log(download_hashes)
-        document.getElementById("list_downloads").innerHTML = (download_hashes);
-      })
-    });
-    } 
-    catch (error)
-    {
-      console.error(error);
-      alert('Error: Unable to create transaction.');
+    if (downloader == ''){
+      alert('Error: Please insert name.')
     }
-    //-- Then initiate download
-    //https://stackoverflow.com/questions/48035864/how-download-file-via-ipfs-using-nodejs  ?????
-    ipfs.files.get(fileHash, function (err,files) {
-      if(err){
-        alert('Error: File not retrievable. ')
-        console.error(err)
-        return
-      }
-      else {
-        files.forEach((file) => {
-          console.log("File Path: ", link)
-          console.log("File Content: ",file.content.toString('utf8'))  //.toString('utf8')
-          download(fileName, file.content);
-          //download(link, fileName);
+    else{
+      //First Create a transaction for the download
+      try
+      {
+        let time = "" + Date.now();
+        contract.methods.download(fileHash, fileName, time, downloader, IP).send({from : accounts[0]}).then((r) => {
+          console.log('Download transaction created.')
+          this.getLatestBlockHash().then(function(result){
+          //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.
+          let blockhash = result;
+          //console.log("**** update txHash", blockhash);
+          //call ' update' after the creation of the transaction.
+          contract.methods.updateTxHash_download(blockhash).send({from : accounts[0]});
+          //This method requires Gas to be called, but now working.
+          blockhash = blockhash.concat('\n') //Add new line to display neater
+          download_hashes = download_hashes.concat([blockhash])
+          console.log(download_hashes)
+          document.getElementById("list_downloads").innerHTML = (download_hashes);
         })
+      });
+      } 
+      catch (error)
+      {
+        console.error(error);
+        alert('Error: Unable to create transaction.');
       }
-    })
+      //-- Then initiate download
+      //https://stackoverflow.com/questions/48035864/how-download-file-via-ipfs-using-nodejs  ?????
+      ipfs.files.get(fileHash, function (err,files) {
+        if(err){
+          alert('Error: File not retrievable. ')
+          console.error(err)
+          return
+        }
+        else {
+          files.forEach((file) => {
+            console.log("File Path: ", link)
+            console.log("File Content: ",file.content.toString('utf8'))  //.toString('utf8')
+            download(fileName, file.content);
+            //download(link, fileName);
+          })
+        }
+      })
+    }
 }
 
 button_download_latest_by_txHash = async (event) => {
@@ -543,21 +548,24 @@ const Navigation = () => (
             <a><NavLink to='/upload'>Upload</NavLink></a>       
   </nav>
 );
+//<img src={`https://ipfs.io/ipfs/${props.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
+//<h2>Upload File</h2>
 
 const Upload = (props) => (
   //access state using 'props' aka properties.
   <div className ='upload'>
   <h1>IPFS and Blockchain File Storage</h1>
-         <p>This file is stored on IPFS & The Ethereum Blockchain!</p>
-         <img src={`https://ipfs.io/ipfs/${props.ipfsHash}`} alt=  " :( ~ Hash not found"/> 
-         <h2>Upload File</h2>
+         <p>Please insert name and select a file to be stored on IPFS and Ethereum Blockchain.</p>
          <form onSubmit={props.onSubmit} > 
             <label htmlFor="author"> Insert Name:  </label>
             <input className="author" id="author" type='text'/>
             <br></br>
-            <input className="captureFile" id="captureFile" type='file' onChange={props.captureFile}/>
+            <p>Drag & Drop file or click to browse.</p>
+            <div class="drop-zone">
+              <input className="captureFile" id="captureFile" type='file' onChange={props.captureFile}/>
+            </div>
             <input className="submit" type='submit' />
-            </form>
+          </form>
           <br></br>
           <output id="ipfsURL"></output>
           <br></br>

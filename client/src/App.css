@@ -99,17 +99,46 @@ Keep page fit to size
 
 /* Capture File Button*/ 
 .captureFile {
+  /*display: none;  /*embedded in drag&drop*/
+  content-visibility: hidden;
   font-family: 'Montserrat', sans-serif;
   color: black;
   font-size: 15px;
   margin-bottom: 10px;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
 }
 
 /* Submit File Button*/ 
 .submit {
+  margin-bottom: 20px;
+  margin-top: 5px;
+  margin-left: 2px;
+  padding: 2px;
+  background-color: #ff5252;
   font-family: 'Montserrat', sans-serif;
-  color: black;
+  color: white;
   font-size: 15px;
+}
+
+/* Drop zone for drag & drop element*/
+.drop-zone {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  height: 200px;
+  padding: 25px;
+  display: flex;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  color: grey;
+  border: 4px dashed #f58484;
+  border-radius: 10px;
+  padding-bottom: 50px;
 }
 
 /* Show Latest Block Button */
