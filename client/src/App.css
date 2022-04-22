@@ -13,7 +13,7 @@ html, body{
 }
 
 h1{
-  padding-top: 10px;
+  padding-top: 1px;
 }
 
 h2{
@@ -122,6 +122,11 @@ Keep page fit to size
   font-size: 15px;
 }
 
+.submit:hover {
+  background-color: #eee;
+  color: black;
+}
+
 /* Drop zone for drag & drop element*/
 .drop-zone {
   font-family: 'Montserrat', sans-serif;
@@ -139,6 +144,10 @@ Keep page fit to size
   border: 4px dashed #f58484;
   border-radius: 10px;
   padding-bottom: 50px;
+}
+
+.drop-zone:hover {
+  border-style: solid;
 }
 
 /* Show Latest Block Button */

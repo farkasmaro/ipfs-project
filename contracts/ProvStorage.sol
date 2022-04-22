@@ -2,14 +2,14 @@
 pragma solidity >=0.5.16 <8.10.0;
 
 contract ProvStorage {
-//State Variables
+//-- Declaration of State Variables (global)
   uint txNumber_upload = 0;
   uint txNumber_download = 0;
   string latest_txHash_upload = "";
   string latest_txHash_download = "";
   string temp_txHash = "origin";
 
-// Upload structure
+//--Upload structure
 struct Upload {
   //Properties of each upload instance
   uint txNumber;
@@ -17,10 +17,12 @@ struct Upload {
   string txHash;
   string author;
   string filename;
-  uint timestamp;  
+  uint timestamp; 
+  string IP; 
 }
-//Download Structure - Download instances also added to chain
+//--Download Structure - Download instances also added to chain
 struct Download {
+  //Properties of each Download Structure
   uint txNumber;
   string ipfsHash;
   string txHash;
@@ -28,24 +30,22 @@ struct Download {
   string filename;
   uint timestamp;
   string IP;
-  //string ip;  need to pull from dapp
 }
 
 //Mappings
 mapping(string => Upload) public uploads;
 //txHash maps to an Upload instance
 mapping(string => Download) public downloads;
-//txHash maps to Download instance too!
+//txHash maps to Download instance too.
 
 //mapping(address => mapping(uint => Upload)) public address_uploads;  //NOT IN USE
 //Uploads can also be mapped to an address (the account of the person who created the upload.)
 
 //--- Upload - Download ---
-
-  function upload(string memory _ipfsHash, string memory _author, string memory _filename, uint _timestamp) public {
+  function upload(string memory _ipfsHash, string memory _author, string memory _filename, uint _timestamp, string memory _IP) public {
     // Function to set the properties of an upload instance.
     txNumber_upload = txNumber_upload +1;
-    uploads[temp_txHash] = Upload(txNumber_upload, _ipfsHash, "empty", _author, _filename, _timestamp);
+    uploads[temp_txHash] = Upload(txNumber_upload, _ipfsHash, "empty", _author, _filename, _timestamp, _IP);
   }
   
   function download(string memory _ipfsHash, string memory _filename, uint _time, string memory _downloader, string memory _IP) public {
@@ -54,14 +54,14 @@ mapping(string => Download) public downloads;
     downloads[temp_txHash] = Download(txNumber_download, _ipfsHash, "empty", _downloader, _filename, _time, _IP);
   }
  
-  //function to update txHash with correct value (blockhash) that gets generated after 'upload' is called
+  //--Function to update txHash with correct value (blockhash) that gets generated after 'upload' is called
   function updateTxHash_upload(string memory _txHash) public {
     //set upload instance to have index as transaction hash
     uploads[_txHash] = uploads[temp_txHash];
     uploads[_txHash].txHash = _txHash;
     latest_txHash_upload = _txHash;
   }
-  //function to update txHash with correct value (blockhash) that gets generated after 'upload' is called
+  //-- function to update txHash with correct value (blockhash) that gets generated after 'upload' is called
   function updateTxHash_download(string memory _txHash) public {
     downloads[_txHash] = downloads[temp_txHash];
     downloads[_txHash].txHash = _txHash;
@@ -71,6 +71,7 @@ mapping(string => Download) public downloads;
 
 
   //---------Upload Get latest transaction---------
+  //Return properties of the most recent upload instance
   function getTxNumber_up_latest() public view returns (uint){
     //return the latest transaction number
     return txNumber_upload;
@@ -101,9 +102,14 @@ mapping(string => Download) public downloads;
     //return author based on txNumber and current account.
     return uploads[latest_txHash_upload].timestamp;
   }
+   function getIP_up_latest() public view returns (string memory)
+  {
+    return uploads[latest_txHash_upload].IP;
+  }
   //-------------------------------------------------------------
 
 //----------- Download Get LATEST ------------------
+// Returning the properties added to the most recent instance of a download
   function getTxNumber_down_latest() public view returns (uint){
     //return the latest transaction number
     return txNumber_download;
@@ -133,8 +139,8 @@ mapping(string => Download) public downloads;
     return downloads[latest_txHash_download].IP;
   }
 
-
   //---------Get upload properties based on txHash ---------
+  // Each function takes a transaction hash as input to return the property mapped by transaction hash.
   function getTxNumber_up(string memory txHash) public view returns (uint){
     //return the latest transaction number
     return uploads[txHash].txNumber;
@@ -163,9 +169,14 @@ mapping(string => Download) public downloads;
     //return author based on txNumber and current account.
     return uploads[txHash].timestamp;
   }
+  function getIP_up(string memory txHash) public view returns (string memory)
+  {
+    return uploads[txHash].IP;
+  }
   //-------------------------------------------------------------
 
   //----------- Download download properties based on txHash ------------------
+  //Each function takes a transaction hash as input to return the property mapped by transaction hash.
   function getTxNumber_down(string memory txHash) public view returns (uint){
     //return the latest transaction number
     return downloads[txHash].txNumber;
