@@ -415,11 +415,12 @@ button_download_latest = async (event) => {
 }
 
 //-- Function to initiate download of a file mapped to inputted transaction hash
-button_download_latest_by_txHash = async (event) => {
+button_download_by_txHash = async (event) => {
   event.preventDefault();
   const {contract, accounts } = this.state;
   let IP = await getIP()
   console.log('IP: ', IP)
+  let txHash_check = false;
  
   let txHash = document.getElementById("download_txHash").value;
   const fileHash = await contract.methods.getIPFS_up(txHash).call();
@@ -427,48 +428,62 @@ button_download_latest_by_txHash = async (event) => {
   let downloader = document.getElementById("downloader").value;
   let link = 'https://ipfs.io/ipfs/'+fileHash;
 
-  //First Create a transaction for the download
-  try
-  {
-    let time = "" + Date.now();
-    contract.methods.download(fileHash, fileName, time, downloader, IP).send({from : accounts[0]}).then((r) => {
-      console.log('Download transaction created.')
-      this.getLatestBlockHash().then(function(result){
-      //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.
-      let blockhash = result;
-      //console.log("**** update txHash", blockhash);
-      //call ' update' after the creation of the transaction.
-      contract.methods.updateTxHash_download(blockhash).send({from : accounts[0]});
-      //This method requires Gas to be called, but now working.
-      //Update global array holding download Tx hashes
-      blockhash = blockhash.concat('\n') //Add new line to display neater
-      download_hashes = download_hashes.concat([blockhash])
-      console.log(download_hashes)
-      //document.getElementById("list_downloads").innerHTML = (download_hashes);
-    })
-  });
-  } 
-  catch (error)
-  {
-    console.error(error);
-    alert('Error: Unable to create transaction.');
+  if (downloader == ''){
+    alert('Error: Please insert name.')
   }
-  //-- Then initiate download
-  ipfs.files.get(fileHash, function (err,files) {
-    if(err){
-      alert('Error: File not retrievable. ')
-      console.error(err)
-      return
+  else {
+  //First Create a transaction for the download
+    //-- Then initiate download
+    ipfs.files.get(fileHash, function (err,files) {
+      if(err){
+        alert('Error: File not retrievable. ')
+        console.error(err)
+        txHash_check = false; 
+        return;
+      }
+      else {
+        files.forEach((file) => {
+          console.log("File Path: ", link)
+          txHash_check = true; 
+          console.log("File Content: ",file.content.toString('utf8'))  //.toString('utf8')
+          download(fileName, file.content);
+          //download(link, fileName);
+        })
+      }
+    })
+    if (txHash_check == true)
+    {
+      try
+      {
+        let time = "" + Date.now();
+        contract.methods.download(fileHash, fileName, time, downloader, IP).send({from : accounts[0]}).then((r) => {
+          console.log('Download transaction created.')
+          this.getLatestBlockHash().then(function(result){
+          //Need to access the promise 'result' so need .then() otherwise the entire promsie is used.
+          let blockhash = result;
+          //console.log("**** update txHash", blockhash);
+          //call ' update' after the creation of the transaction.
+          contract.methods.updateTxHash_download(blockhash).send({from : accounts[0]});
+          //This method requires Gas to be called, but now working.
+          //Update global array holding download Tx hashes
+          blockhash = blockhash.concat('\n') //Add new line to display neater
+          download_hashes = download_hashes.concat([blockhash])
+          console.log(download_hashes)
+          //document.getElementById("list_downloads").innerHTML = (download_hashes);
+          })
+        });
+      } 
+      catch (error)
+      {
+        console.error(error);
+        alert('Error: Unable to create transaction.');
+      }
     }
     else {
-      files.forEach((file) => {
-        console.log("File Path: ", link)
-        console.log("File Content: ",file.content.toString('utf8'))  //.toString('utf8')
-        download(fileName, file.content);
-        //download(link, fileName);
-      })
+      alert('Error: Invalid Transaction Hash. ');
+      return;
     }
-  })
+  }
 }
 
 //-- Function to display the block properties most recently added to Ethereum blockchain. 
@@ -539,7 +554,7 @@ button_blockSelect = async (event) =>
           <Route path='/download' element={<Download
               //passing state functions
               button_download_latest = {this.button_download_latest}
-              button_download_latest_by_txHash ={this.button_download_latest_by_txHash}/>}></Route>
+              button_download_by_txHash ={this.button_download_by_txHash}/>}></Route>
           <Route path='/verify' element={<Verify
               button_blockSelect = {this.button_blockSelect}
               button_show_latest_block = {this.button_show_latest_block}
@@ -607,7 +622,7 @@ const Download = (props) => (
          </button>
       <hr></hr>
       <p>Download file by Transaction Hash:</p>
-      <form onSubmit={props.button_download_latest_by_txHash} >
+      <form onSubmit={props.button_download_by_txHash} >
             <input id="download_txHash" type='text'/>
             <input className="submit" type='submit' />
          </form>
